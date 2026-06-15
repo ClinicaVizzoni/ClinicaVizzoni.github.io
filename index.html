@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clínica Vizzoni – Pagamentos</title>
+<style>
+  :root {
+    --wine: #8B1A1A; --wine2: #a52020; --wine-lite: #f5e6e6;
+    --gray: #4A4A4A; --lightgray: #888; --bg: #faf5f5;
+    --white: #fff; --border: #d9b8b8; --red: #c0392b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: var(--bg); color: var(--gray); min-height: 100vh; }
+
+  header { background: var(--wine); color: white; padding: 14px 16px;
+    display: flex; align-items: center; gap: 10px;
+    position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+  header h1 { font-size: 18px; letter-spacing: .3px; }
+  header p  { font-size: 10px; opacity: .8; letter-spacing: 1.5px; text-transform: uppercase; }
+
+  .search-wrap { background: var(--white); padding: 10px 14px;
+    border-bottom: 1px solid var(--border); position: sticky; top: 58px; z-index: 99; }
+  .search-wrap input { width: 100%; padding: 8px 12px; border-radius: 8px;
+    border: 1.5px solid var(--border); font-size: 14px; outline: none; color: var(--gray); }
+  .search-wrap input:focus { border-color: var(--wine2); }
+
+  .tabs { display: flex; overflow-x: auto; gap: 7px; padding: 10px 14px 6px;
+    background: var(--white); border-bottom: 1px solid var(--border);
+    position: sticky; top: 106px; z-index: 98; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex-shrink: 0; background: var(--wine-lite); color: var(--wine);
+    border: 1.5px solid var(--border); border-radius: 20px; padding: 5px 13px;
+    font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all .15s; }
+  .tab.active, .tab:hover { background: var(--wine); color: white; border-color: var(--wine); }
+
+  main { padding: 14px; max-width: 700px; margin: 0 auto; }
+
+  .day-card { margin-bottom: 18px; border-radius: 12px; overflow: hidden;
+    box-shadow: 0 2px 10px rgba(139,26,26,.13); display: none; }
+  .day-card.visible { display: block; }
+
+  .day-header { background: var(--wine); color: white; padding: 9px 14px;
+    display: flex; justify-content: space-between; align-items: center; }
+  .day-header .dlabel { font-weight: 700; font-size: 15px; }
+  .day-count { background: rgba(255,255,255,.2); font-size: 12px; padding: 2px 9px; border-radius: 20px; }
+
+  .patient-row { display: flex; align-items: center; padding: 7px 10px;
+    border-bottom: 1px solid var(--border); gap: 6px; }
+  .patient-row.even { background: var(--wine-lite); }
+  .patient-row.odd  { background: var(--white); }
+  .patient-row.editing { background: #fffde7; }
+
+  .pname { flex: 1; font-size: 14px; color: var(--gray); cursor: pointer; padding: 2px; }
+  .pobs  { font-size: 12px; font-weight: 600; color: var(--wine2); }
+
+  .edit-input { flex: 1; padding: 5px 8px; border-radius: 6px;
+    border: 1.5px solid var(--wine); font-size: 13px; outline: none; }
+  .obs-input-small { width: 70px; padding: 5px 7px; border-radius: 6px;
+    border: 1.5px solid var(--border); font-size: 12px; outline: none; }
+
+  .btn-icon { background: none; border: none; cursor: pointer; font-size: 16px;
+    padding: 0 2px; color: #ccc; line-height: 1; }
+  .btn-icon:hover { color: var(--red); }
+  .btn-edit { color: #c9a0a0; font-size: 14px; }
+  .btn-save { background: var(--wine); color: white; border: none; border-radius: 6px;
+    padding: 5px 10px; font-size: 13px; cursor: pointer; }
+  .btn-cancel { background: none; border: 1px solid var(--border); border-radius: 6px;
+    padding: 5px 8px; font-size: 13px; cursor: pointer; color: var(--lightgray); }
+
+  .empty { background: var(--white); padding: 14px; text-align: center;
+    color: var(--lightgray); font-style: italic; font-size: 13px; }
+
+  .add-row { background: var(--white); padding: 9px 12px;
+    display: flex; gap: 7px; border-top: 1.5px dashed var(--border); }
+  .add-row input { flex: 1; padding: 7px 10px; border-radius: 8px;
+    border: 1.5px solid var(--border); font-size: 13px; outline: none; color: var(--gray); }
+  .add-row input.obs { max-width: 80px; }
+  .add-row input:focus { border-color: var(--wine2); }
+  .btn-add { background: var(--wine); color: white; border: none;
+    border-radius: 8px; padding: 7px 14px; font-size: 20px; cursor: pointer; line-height: 1; }
+  .btn-add:hover { background: var(--wine2); }
+
+  footer { text-align: center; padding: 20px; font-size: 12px; color: var(--lightgray); }
+</style>
+</head>
+<body>
+
+<header>
+  <span style="font-size:26px">🦷</span>
+  <div>
+    <h1>Clínica Vizzoni</h1>
+    <p>Odontologia Especializada · Agenda de Pagamentos</p>
+  </div>
+</header>
+
+<div class="search-wrap">
+  <input type="text" id="search" placeholder="🔍  Buscar paciente..." oninput="doSearch(this.value)">
+</div>
+
+<div class="tabs" id="tabs"></div>
+<main id="main"></main>
+<footer>Clínica Vizzoni · Odontologia Especializada</footer>
+
+<script>
+const DAYS = [5,6,10,15,20,25,30];
+
+const INITIAL = {
+  5:  [{n:"Silvenir",o:""},{n:"Rejane Venceslau",o:""},{n:"Creuza",o:""},{n:"José Inácio",o:""},{n:"Marcelle V. Boas",o:""},{n:"Brenno Coutinho",o:""},{n:"Luis Felipe Marinho",o:""},{n:"Amélia",o:""},{n:"Kayky",o:""},{n:"Mª Eduarda O. Lacerda",o:""},{n:"Davi Macabru",o:""},{n:"José Alexandre",o:""},{n:"Bruno Guimarães",o:""},{n:"Jairo Santana",o:""}],
+  6:  [{n:"João Vitor",o:""}],
+  10: [{n:"Francielle (filho)",o:""},{n:"Carol Saninho",o:""},{n:"Luana",o:""},{n:"Patrick",o:""},{n:"Carlinhos",o:""},{n:"Marina Boaretto",o:""},{n:"Saninho",o:""},{n:"Bruna Campos",o:""},{n:"Mahelle",o:""},{n:"Arthur Carvalho",o:""},{n:"Thayana",o:""},{n:"João Gabriel Viana",o:""},{n:"Davi Lucca da S. Nunes",o:""},{n:"Luiz Gustavo Vanelli",o:""},{n:"João Gabriel Pai",o:""},{n:"Raitor Conceição",o:""},{n:"José Marcelino",o:""},{n:"Tais Gil",o:""},{n:"Luciane",o:""},{n:"Jalson",o:""},{n:"Jaqueline Zamboni",o:""},{n:"Alexandre Pinto",o:""},{n:"Josélia",o:""},{n:"Mateus Souza Gonçalves",o:""},{n:"Meri Cardige",o:""}],
+  15: [{n:"Karol Carvalho",o:""},{n:"Luiz Felipe Oliveira",o:""},{n:"Ana Isis",o:""},{n:"Kauãny",o:""},{n:"Ianca",o:""},{n:"Ihasmin",o:""},{n:"Alessandra",o:""},{n:"Williane",o:""},{n:"Hollem",o:""},{n:"Carmela Cabral",o:""},{n:"Mara Kelly",o:""}],
+  20: [{n:"Thayane",o:""},{n:"Márcia Cristina",o:""},{n:"Thalia",o:""},{n:"Alcione Mata",o:""},{n:"Marcelle Latini",o:""},{n:"João Miguel Hilário",o:""},{n:"João Henrique Fonseca",o:""},{n:"João Hellio",o:""},{n:"Sarah Estevão",o:""},{n:"Dom",o:""},{n:"Letícia Brito",o:""},{n:"Milene Gerra",o:""},{n:"Filipe Marques",o:""},{n:"Márcio",o:""},{n:"Franciane",o:""},{n:"Lucca Dautt",o:""}],
+  25: [{n:"Paulo Otávio",o:""},{n:"Leia",o:""},{n:"Ederson",o:""},{n:"Lucimar Mendes",o:""},{n:"Másmins",o:""},{n:"Eliel",o:""},{n:"Lourenço José",o:""}],
+  30: [{n:"Jhemerson Barrias",o:""},{n:"Jorge Barrias",o:""},{n:"Rosiane Picoto",o:""},{n:"Alessandra",o:""},{n:"Lucas Ferreira",o:""},{n:"Marcela (prefeitura)",o:""},{n:"Maria Judith",o:""},{n:"Mirian Carla",o:""},{n:"Maxilaine",o:""},{n:"Heitor",o:""},{n:"Lana",o:""},{n:"Luis",o:""},{n:"Ana Julia Ventania",o:""},{n:"Lisâne",o:""},{n:"Fernanda",o:""},{n:"Gustavo Vanelli",o:""},{n:"Rosane",o:""},{n:"Amanda Marques",o:""},{n:"Maria Vitória Oliveira",o:""},{n:"Romário",o:""},{n:"Claudimara",o:""},{n:"Sirlene",o:""},{n:"Kevellyn",o:""},{n:"Juliana",o:""},{n:"Juliano da Costa Silva",o:""},{n:"Roberto Thomas",o:""},{n:"Joana Gama",o:""},{n:"Zaquinho",o:""},{n:"Paula",o:""},{n:"Kamylle",o:""},{n:"Sirlane Saynam",o:""},{n:"Seplina",o:""},{n:"Ricardo Salgado",o:""},{n:"Marina Marcelina",o:""},{n:"Franciane",o:""}]
+};
+
+function load() {
+  try { const s=localStorage.getItem('vz3'); return s?JSON.parse(s):JSON.parse(JSON.stringify(INITIAL)); }
+  catch(e){ return JSON.parse(JSON.stringify(INITIAL)); }
+}
+function save(d){ try{localStorage.setItem('vz3',JSON.stringify(d));}catch(e){} }
+
+let data = load();
+let activeDay = 'all';
+let searchQ = '';
+let editState = null;
+let editName = '';
+let editObs  = '';
+
+function render(){ renderTabs(); renderCards(); }
+
+function renderTabs(){
+  let h = `<div class="tab ${activeDay==='all'?'active':''}" onclick="setDay('all')">Todos</div>`;
+  DAYS.forEach(d => {
+    const n=(data[d]||[]).length;
+    h += `<div class="tab ${activeDay==d?'active':''}" onclick="setDay(${d})">Dia ${String(d).padStart(2,'0')} (${n})</div>`;
+  });
+  document.getElementById('tabs').innerHTML = h;
+}
+
+function renderCards(){
+  const main = document.getElementById('main');
+  main.innerHTML = '';
+  DAYS.forEach(day => {
+    const show = activeDay==='all' || activeDay==day;
+    const patients = data[day]||[];
+    const sq = searchQ.toLowerCase();
+    const list = sq ? patients.filter(p=>p.n.toLowerCase().includes(sq)) : patients;
+
+    const card = document.createElement('div');
+    card.className = 'day-card' + (show?' visible':'');
+    card.id = 'card-' + day;
+
+    let rows = '';
+    if(list.length===0){
+      rows = `<div class="empty">Nenhum paciente</div>`;
+    } else {
+      list.forEach((p,i)=>{
+        const realIdx = patients.indexOf(p);
+        const isEd = editState && editState.day==day && editState.idx==realIdx;
+        const cls = isEd ? 'editing' : (i%2===0?'even':'odd');
+        if(isEd){
+          rows += `<div class="patient-row ${cls}">
+            <input class="edit-input" id="ei-n" value="${escHtml(editName)}" onkeydown="edKey(event,${day})" oninput="editName=this.value">
+            <input class="obs-input-small" id="ei-o" value="${escHtml(editObs)}" placeholder="Obs." onkeydown="edKey(event,${day})" oninput="editObs=this.value">
+            <button class="btn-save" onclick="saveEdit(${day},${realIdx})">✓</button>
+            <button class="btn-cancel" onclick="cancelEdit()">✕</button>
+          </div>`;
+        } else {
+          rows += `<div class="patient-row ${cls}">
+            <span class="pname" onclick="startEdit(${day},${realIdx},'${escJs(p.n)}','${escJs(p.o)}')" title="Clique para editar">${escHtml(p.n)}</span>
+            ${p.o?`<span class="pobs">${escHtml(p.o)}</span>`:''}
+            <button class="btn-icon btn-edit" onclick="startEdit(${day},${realIdx},'${escJs(p.n)}','${escJs(p.o)}')" title="Editar">✏️</button>
+            <button class="btn-icon" onclick="removePt(${day},${realIdx})" title="Remover">×</button>
+          </div>`;
+        }
+      });
+    }
+
+    card.innerHTML = `
+      <div class="day-header">
+        <span class="dlabel">Dia ${String(day).padStart(2,'0')}</span>
+        <span class="day-count">${patients.length} paciente${patients.length!==1?'s':''}</span>
+      </div>
+      ${rows}
+      <div class="add-row">
+        <input type="text" id="an-${day}" placeholder="Nome do paciente" onkeydown="if(event.key==='Enter')addPt(${day})">
+        <input type="text" id="ao-${day}" placeholder="Obs." class="obs" onkeydown="if(event.key==='Enter')addPt(${day})">
+        <button class="btn-add" onclick="addPt(${day})">+</button>
+      </div>`;
+    main.appendChild(card);
+
+    if(editState && editState.day==day){
+      setTimeout(()=>{ const el=document.getElementById('ei-n'); if(el){el.focus();el.select();} },30);
+    }
+  });
+}
+
+function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escJs(s){  return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+
+function setDay(d){ activeDay=d; searchQ=''; document.getElementById('search').value=''; cancelEdit(); render();
+  if(d!=='all') setTimeout(()=>{ const c=document.getElementById('card-'+d); if(c) c.scrollIntoView({behavior:'smooth',block:'start'}); },80); }
+
+function doSearch(q){ searchQ=q.trim(); activeDay='all'; cancelEdit(); render(); }
+
+function addPt(day){
+  const ni=document.getElementById('an-'+day);
+  const oi=document.getElementById('ao-'+day);
+  const name=ni.value.trim(); if(!name) return;
+  data[day].push({n:name,o:oi.value.trim()});
+  save(data); ni.value=''; oi.value=''; render();
+  setTimeout(()=>{ const el=document.getElementById('an-'+day); if(el) el.focus(); },60);
+}
+
+function removePt(day,idx){
+  if(!confirm('Remover "'+data[day][idx].n+'"?')) return;
+  data[day].splice(idx,1); save(data); cancelEdit(); render();
+}
+
+function startEdit(day,idx,name,obs){ editState={day,idx}; editName=name; editObs=obs; render(); }
+function cancelEdit(){ editState=null; render(); }
+function saveEdit(day,idx){
+  if(!editName.trim()) return;
+  data[day][idx]={n:editName.trim(),o:editObs.trim()};
+  save(data); editState=null; render();
+}
+function edKey(e,day){
+  if(e.key==='Enter') saveEdit(day,editState.idx);
+  if(e.key==='Escape') cancelEdit();
+}
+
+render();
+</script>
+</body>
+</html>
