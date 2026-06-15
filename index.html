@@ -13,40 +13,53 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Arial, sans-serif; background: var(--bg); color: var(--gray); min-height: 100vh; }
 
-  header { background: var(--wine); color: white; padding: 14px 16px;
-    display: flex; align-items: center; gap: 10px;
-    position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
-  header h1 { font-size: 18px; letter-spacing: .3px; }
-  header p  { font-size: 10px; opacity: .8; letter-spacing: 1.5px; text-transform: uppercase; }
+  /* LOGIN */
+  #login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--wine); }
+  .login-box { background: white; border-radius: 16px; padding: 36px 28px; width: 90%; max-width: 340px; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,.3); }
+  .login-box .tooth { font-size: 48px; margin-bottom: 10px; }
+  .login-box h2 { color: var(--wine); font-size: 20px; margin-bottom: 4px; }
+  .login-box p  { color: var(--lightgray); font-size: 12px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 24px; }
+  .login-box input { width: 100%; padding: 12px 14px; border-radius: 8px; border: 1.5px solid var(--border); font-size: 16px; outline: none; color: var(--gray); text-align: center; letter-spacing: 2px; margin-bottom: 12px; }
+  .login-box input:focus { border-color: var(--wine); }
+  .login-box button { width: 100%; padding: 12px; background: var(--wine); color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; }
+  .login-error { color: var(--red); font-size: 13px; margin-top: 10px; display: none; }
 
-  .search-wrap { background: var(--white); padding: 10px 14px;
-    border-bottom: 1px solid var(--border); position: sticky; top: 58px; z-index: 99; }
-  .search-wrap input { width: 100%; padding: 8px 12px; border-radius: 8px;
-    border: 1.5px solid var(--border); font-size: 14px; outline: none; color: var(--gray); }
+  /* APP */
+  #app-screen { display: none; }
+
+  header { background: var(--wine); color: white; padding: 12px 14px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+  header h1 { font-size: 17px; flex: 1; }
+  header p  { font-size: 10px; opacity: .8; letter-spacing: 1px; text-transform: uppercase; }
+  .hdr-btns { display: flex; gap: 6px; }
+  .btn-hdr { background: rgba(255,255,255,.2); border: none; color: white; border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer; white-space: nowrap; }
+  .btn-hdr:hover { background: rgba(255,255,255,.35); }
+
+  .search-wrap { background: var(--white); padding: 10px 14px; border-bottom: 1px solid var(--border); position: sticky; top: 56px; z-index: 99; }
+  .search-wrap input { width: 100%; padding: 8px 12px; border-radius: 8px; border: 1.5px solid var(--border); font-size: 14px; outline: none; color: var(--gray); }
   .search-wrap input:focus { border-color: var(--wine2); }
 
-  .tabs { display: flex; overflow-x: auto; gap: 7px; padding: 10px 14px 6px;
-    background: var(--white); border-bottom: 1px solid var(--border);
-    position: sticky; top: 106px; z-index: 98; scrollbar-width: none; }
+  .tabs-wrap { background: var(--white); border-bottom: 1px solid var(--border); position: sticky; top: 104px; z-index: 98; }
+  .tabs { display: flex; overflow-x: auto; gap: 7px; padding: 10px 14px 6px; scrollbar-width: none; }
   .tabs::-webkit-scrollbar { display: none; }
-  .tab { flex-shrink: 0; background: var(--wine-lite); color: var(--wine);
-    border: 1.5px solid var(--border); border-radius: 20px; padding: 5px 13px;
-    font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all .15s; }
+  .tab { flex-shrink: 0; background: var(--wine-lite); color: var(--wine); border: 1.5px solid var(--border); border-radius: 20px; padding: 5px 11px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all .15s; display: flex; align-items: center; gap: 5px; }
   .tab.active, .tab:hover { background: var(--wine); color: white; border-color: var(--wine); }
+  .tab-del { font-size: 15px; opacity: .6; line-height: 1; }
+  .tab-del:hover { opacity: 1; }
+  .tab-add { background: var(--white); border: 1.5px dashed var(--border); color: var(--lightgray); }
+  .tab-add:hover { background: var(--wine-lite); color: var(--wine); border-color: var(--wine); }
 
   main { padding: 14px; max-width: 700px; margin: 0 auto; }
 
-  .day-card { margin-bottom: 18px; border-radius: 12px; overflow: hidden;
-    box-shadow: 0 2px 10px rgba(139,26,26,.13); display: none; }
+  .day-card { margin-bottom: 18px; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(139,26,26,.13); display: none; }
   .day-card.visible { display: block; }
 
-  .day-header { background: var(--wine); color: white; padding: 9px 14px;
-    display: flex; justify-content: space-between; align-items: center; }
-  .day-header .dlabel { font-weight: 700; font-size: 15px; }
-  .day-count { background: rgba(255,255,255,.2); font-size: 12px; padding: 2px 9px; border-radius: 20px; }
+  .day-header { background: var(--wine); color: white; padding: 9px 14px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .day-header .dlabel { font-weight: 700; font-size: 15px; flex: 1; }
+  .day-count { background: rgba(255,255,255,.2); font-size: 12px; padding: 2px 9px; border-radius: 20px; white-space: nowrap; }
+  .btn-del-day { background: rgba(255,255,255,.15); border: none; color: white; border-radius: 6px; padding: 3px 8px; font-size: 12px; cursor: pointer; white-space: nowrap; }
+  .btn-del-day:hover { background: rgba(255,255,255,.35); }
 
-  .patient-row { display: flex; align-items: center; padding: 7px 10px;
-    border-bottom: 1px solid var(--border); gap: 6px; }
+  .patient-row { display: flex; align-items: center; padding: 7px 10px; border-bottom: 1px solid var(--border); gap: 6px; }
   .patient-row.even { background: var(--wine-lite); }
   .patient-row.odd  { background: var(--white); }
   .patient-row.editing { background: #fffde7; }
@@ -54,56 +67,102 @@
   .pname { flex: 1; font-size: 14px; color: var(--gray); cursor: pointer; padding: 2px; }
   .pobs  { font-size: 12px; font-weight: 600; color: var(--wine2); }
 
-  .edit-input { flex: 1; padding: 5px 8px; border-radius: 6px;
-    border: 1.5px solid var(--wine); font-size: 13px; outline: none; }
-  .obs-input-small { width: 70px; padding: 5px 7px; border-radius: 6px;
-    border: 1.5px solid var(--border); font-size: 12px; outline: none; }
-
-  .btn-icon { background: none; border: none; cursor: pointer; font-size: 16px;
-    padding: 0 2px; color: #ccc; line-height: 1; }
+  .edit-input { flex: 1; padding: 5px 8px; border-radius: 6px; border: 1.5px solid var(--wine); font-size: 13px; outline: none; }
+  .obs-input-small { width: 70px; padding: 5px 7px; border-radius: 6px; border: 1.5px solid var(--border); font-size: 12px; outline: none; }
+  .btn-icon { background: none; border: none; cursor: pointer; font-size: 16px; padding: 0 2px; color: #ccc; line-height: 1; }
   .btn-icon:hover { color: var(--red); }
   .btn-edit { color: #c9a0a0; font-size: 14px; }
-  .btn-save { background: var(--wine); color: white; border: none; border-radius: 6px;
-    padding: 5px 10px; font-size: 13px; cursor: pointer; }
-  .btn-cancel { background: none; border: 1px solid var(--border); border-radius: 6px;
-    padding: 5px 8px; font-size: 13px; cursor: pointer; color: var(--lightgray); }
+  .btn-save { background: var(--wine); color: white; border: none; border-radius: 6px; padding: 5px 10px; font-size: 13px; cursor: pointer; }
+  .btn-cancel { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; font-size: 13px; cursor: pointer; color: var(--lightgray); }
 
-  .empty { background: var(--white); padding: 14px; text-align: center;
-    color: var(--lightgray); font-style: italic; font-size: 13px; }
+  .empty { background: var(--white); padding: 14px; text-align: center; color: var(--lightgray); font-style: italic; font-size: 13px; }
 
-  .add-row { background: var(--white); padding: 9px 12px;
-    display: flex; gap: 7px; border-top: 1.5px dashed var(--border); }
-  .add-row input { flex: 1; padding: 7px 10px; border-radius: 8px;
-    border: 1.5px solid var(--border); font-size: 13px; outline: none; color: var(--gray); }
+  .add-row { background: var(--white); padding: 9px 12px; display: flex; gap: 7px; border-top: 1.5px dashed var(--border); }
+  .add-row input { flex: 1; padding: 7px 10px; border-radius: 8px; border: 1.5px solid var(--border); font-size: 13px; outline: none; color: var(--gray); }
   .add-row input.obs { max-width: 80px; }
   .add-row input:focus { border-color: var(--wine2); }
-  .btn-add { background: var(--wine); color: white; border: none;
-    border-radius: 8px; padding: 7px 14px; font-size: 20px; cursor: pointer; line-height: 1; }
+  .btn-add { background: var(--wine); color: white; border: none; border-radius: 8px; padding: 7px 14px; font-size: 20px; cursor: pointer; line-height: 1; }
   .btn-add:hover { background: var(--wine2); }
 
   footer { text-align: center; padding: 20px; font-size: 12px; color: var(--lightgray); }
+
+  /* MODAL */
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200; align-items: center; justify-content: center; }
+  .modal-bg.open { display: flex; }
+  .modal { background: white; border-radius: 14px; padding: 28px 24px; width: 90%; max-width: 320px; text-align: center; }
+  .modal h3 { color: var(--wine); font-size: 17px; margin-bottom: 16px; }
+  .modal input { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1.5px solid var(--border); font-size: 18px; text-align: center; outline: none; margin-bottom: 14px; }
+  .modal input:focus { border-color: var(--wine); }
+  .modal-btns { display: flex; gap: 8px; }
+  .modal-btns button { flex: 1; padding: 10px; border-radius: 8px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn-confirm { background: var(--wine); color: white; }
+  .btn-confirm:hover { background: var(--wine2); }
+  .btn-dismiss { background: var(--wine-lite); color: var(--wine); }
+
+  @media print {
+    #login-screen, header, .search-wrap, .tabs-wrap, .add-row, .btn-icon, .btn-del-day, footer { display: none !important; }
+    #app-screen { display: block !important; }
+    .day-card { display: block !important; box-shadow: none; margin-bottom: 14px; page-break-inside: avoid; border: 1px solid #ccc; border-radius: 0; }
+    body { background: white; }
+    main { padding: 0; max-width: 100%; }
+    .patient-row.even { background: #eee !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .day-header { background: #8B1A1A !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
 </style>
 </head>
 <body>
 
-<header>
-  <span style="font-size:26px">🦷</span>
-  <div>
-    <h1>Clínica Vizzoni</h1>
-    <p>Odontologia Especializada · Agenda de Pagamentos</p>
+<div id="login-screen">
+  <div class="login-box">
+    <div class="tooth">🦷</div>
+    <h2>Clínica Vizzoni</h2>
+    <p>Agenda de Pagamentos</p>
+    <input type="password" id="pwd" placeholder="Digite a senha" onkeydown="if(event.key==='Enter')doLogin()">
+    <button onclick="doLogin()">Entrar</button>
+    <div class="login-error" id="login-error">Senha incorreta. Tente novamente.</div>
   </div>
-</header>
-
-<div class="search-wrap">
-  <input type="text" id="search" placeholder="🔍  Buscar paciente..." oninput="doSearch(this.value)">
 </div>
 
-<div class="tabs" id="tabs"></div>
-<main id="main"></main>
-<footer>Clínica Vizzoni · Odontologia Especializada</footer>
+<div id="app-screen">
+  <header>
+    <span style="font-size:22px">🦷</span>
+    <div style="flex:1">
+      <h1>Clínica Vizzoni</h1>
+      <p>Agenda de Pagamentos</p>
+    </div>
+    <div class="hdr-btns">
+      <button class="btn-hdr" onclick="window.print()">🖨️ Imprimir</button>
+      <button class="btn-hdr" onclick="doLogout()">Sair</button>
+    </div>
+  </header>
+
+  <div class="search-wrap">
+    <input type="text" id="search" placeholder="🔍  Buscar paciente..." oninput="doSearch(this.value)">
+  </div>
+
+  <div class="tabs-wrap">
+    <div class="tabs" id="tabs"></div>
+  </div>
+
+  <main id="main"></main>
+  <footer>Clínica Vizzoni · Odontologia Especializada</footer>
+</div>
+
+<!-- Modal adicionar dia -->
+<div class="modal-bg" id="modal-add">
+  <div class="modal">
+    <h3>Adicionar novo dia</h3>
+    <input type="number" id="new-day-input" min="1" max="31" placeholder="Ex: 12"
+      onkeydown="if(event.key==='Enter')confirmAddDay()">
+    <div class="modal-btns">
+      <button class="btn-dismiss" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="confirmAddDay()">Adicionar</button>
+    </div>
+  </div>
+</div>
 
 <script>
-const DAYS = [5,6,10,15,20,25,30];
+const PWD = "Pa57063069";
 
 const INITIAL = {
   5:  [{n:"Silvenir",o:""},{n:"Rejane Venceslau",o:""},{n:"Creuza",o:""},{n:"José Inácio",o:""},{n:"Marcelle V. Boas",o:""},{n:"Brenno Coutinho",o:""},{n:"Luis Felipe Marinho",o:""},{n:"Amélia",o:""},{n:"Kayky",o:""},{n:"Mª Eduarda O. Lacerda",o:""},{n:"Davi Macabru",o:""},{n:"José Alexandre",o:""},{n:"Bruno Guimarães",o:""},{n:"Jairo Santana",o:""}],
@@ -115,73 +174,95 @@ const INITIAL = {
   30: [{n:"Jhemerson Barrias",o:""},{n:"Jorge Barrias",o:""},{n:"Rosiane Picoto",o:""},{n:"Alessandra",o:""},{n:"Lucas Ferreira",o:""},{n:"Marcela (prefeitura)",o:""},{n:"Maria Judith",o:""},{n:"Mirian Carla",o:""},{n:"Maxilaine",o:""},{n:"Heitor",o:""},{n:"Lana",o:""},{n:"Luis",o:""},{n:"Ana Julia Ventania",o:""},{n:"Lisâne",o:""},{n:"Fernanda",o:""},{n:"Gustavo Vanelli",o:""},{n:"Rosane",o:""},{n:"Amanda Marques",o:""},{n:"Maria Vitória Oliveira",o:""},{n:"Romário",o:""},{n:"Claudimara",o:""},{n:"Sirlene",o:""},{n:"Kevellyn",o:""},{n:"Juliana",o:""},{n:"Juliano da Costa Silva",o:""},{n:"Roberto Thomas",o:""},{n:"Joana Gama",o:""},{n:"Zaquinho",o:""},{n:"Paula",o:""},{n:"Kamylle",o:""},{n:"Sirlane Saynam",o:""},{n:"Seplina",o:""},{n:"Ricardo Salgado",o:""},{n:"Marina Marcelina",o:""},{n:"Franciane",o:""}]
 };
 
-function load() {
-  try { const s=localStorage.getItem('vz3'); return s?JSON.parse(s):JSON.parse(JSON.stringify(INITIAL)); }
+function doLogin(){
+  if(document.getElementById('pwd').value===PWD){
+    sessionStorage.setItem('vz_auth','1');
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app-screen').style.display='block';
+    render();
+  } else {
+    document.getElementById('login-error').style.display='block';
+    document.getElementById('pwd').value='';
+    document.getElementById('pwd').focus();
+  }
+}
+function doLogout(){
+  sessionStorage.removeItem('vz_auth');
+  document.getElementById('app-screen').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('pwd').value='';
+}
+if(sessionStorage.getItem('vz_auth')==='1'){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app-screen').style.display='block';
+}
+
+function load(){
+  try{ const s=localStorage.getItem('vz4'); return s?JSON.parse(s):JSON.parse(JSON.stringify(INITIAL)); }
   catch(e){ return JSON.parse(JSON.stringify(INITIAL)); }
 }
-function save(d){ try{localStorage.setItem('vz3',JSON.stringify(d));}catch(e){} }
+function save(d){ try{localStorage.setItem('vz4',JSON.stringify(d));}catch(e){} }
+function getDays(d){ return Object.keys(d).map(Number).sort((a,b)=>a-b); }
 
-let data = load();
-let activeDay = 'all';
-let searchQ = '';
-let editState = null;
-let editName = '';
-let editObs  = '';
+let data=load(), activeDay='all', searchQ='', editState=null, editName='', editObs='';
 
 function render(){ renderTabs(); renderCards(); }
 
 function renderTabs(){
-  let h = `<div class="tab ${activeDay==='all'?'active':''}" onclick="setDay('all')">Todos</div>`;
-  DAYS.forEach(d => {
+  const days=getDays(data);
+  let h=`<div class="tab ${activeDay==='all'?'active':''}" onclick="setDay('all')">Todos</div>`;
+  days.forEach(d=>{
     const n=(data[d]||[]).length;
-    h += `<div class="tab ${activeDay==d?'active':''}" onclick="setDay(${d})">Dia ${String(d).padStart(2,'0')} (${n})</div>`;
+    const isActive=activeDay==d;
+    h+=`<div class="tab ${isActive?'active':''}" onclick="setDay(${d})">
+      Dia ${String(d).padStart(2,'0')} (${n})
+      <span class="tab-del" onclick="event.stopPropagation();deleteDay(${d})" title="Apagar dia">×</span>
+    </div>`;
   });
-  document.getElementById('tabs').innerHTML = h;
+  h+=`<div class="tab tab-add" onclick="openModal()">＋ Novo dia</div>`;
+  document.getElementById('tabs').innerHTML=h;
 }
 
 function renderCards(){
-  const main = document.getElementById('main');
-  main.innerHTML = '';
-  DAYS.forEach(day => {
-    const show = activeDay==='all' || activeDay==day;
-    const patients = data[day]||[];
-    const sq = searchQ.toLowerCase();
-    const list = sq ? patients.filter(p=>p.n.toLowerCase().includes(sq)) : patients;
-
-    const card = document.createElement('div');
-    card.className = 'day-card' + (show?' visible':'');
-    card.id = 'card-' + day;
-
-    let rows = '';
-    if(list.length===0){
-      rows = `<div class="empty">Nenhum paciente</div>`;
-    } else {
+  const main=document.getElementById('main'); main.innerHTML='';
+  const days=getDays(data);
+  days.forEach(day=>{
+    const show=activeDay==='all'||activeDay==day;
+    const patients=data[day]||[];
+    const sq=searchQ.toLowerCase();
+    const list=sq?patients.filter(p=>p.n.toLowerCase().includes(sq)):patients;
+    const card=document.createElement('div');
+    card.className='day-card'+(show?' visible':'');
+    card.id='card-'+day;
+    let rows='';
+    if(list.length===0){ rows=`<div class="empty">Nenhum paciente</div>`; }
+    else {
       list.forEach((p,i)=>{
-        const realIdx = patients.indexOf(p);
-        const isEd = editState && editState.day==day && editState.idx==realIdx;
-        const cls = isEd ? 'editing' : (i%2===0?'even':'odd');
+        const ri=patients.indexOf(p);
+        const isEd=editState&&editState.day==day&&editState.idx==ri;
+        const cls=isEd?'editing':(i%2===0?'even':'odd');
         if(isEd){
-          rows += `<div class="patient-row ${cls}">
+          rows+=`<div class="patient-row ${cls}">
             <input class="edit-input" id="ei-n" value="${escHtml(editName)}" onkeydown="edKey(event,${day})" oninput="editName=this.value">
             <input class="obs-input-small" id="ei-o" value="${escHtml(editObs)}" placeholder="Obs." onkeydown="edKey(event,${day})" oninput="editObs=this.value">
-            <button class="btn-save" onclick="saveEdit(${day},${realIdx})">✓</button>
+            <button class="btn-save" onclick="saveEdit(${day},${ri})">✓</button>
             <button class="btn-cancel" onclick="cancelEdit()">✕</button>
           </div>`;
         } else {
-          rows += `<div class="patient-row ${cls}">
-            <span class="pname" onclick="startEdit(${day},${realIdx},'${escJs(p.n)}','${escJs(p.o)}')" title="Clique para editar">${escHtml(p.n)}</span>
+          rows+=`<div class="patient-row ${cls}">
+            <span class="pname" onclick="startEdit(${day},${ri},'${escJs(p.n)}','${escJs(p.o)}')">${escHtml(p.n)}</span>
             ${p.o?`<span class="pobs">${escHtml(p.o)}</span>`:''}
-            <button class="btn-icon btn-edit" onclick="startEdit(${day},${realIdx},'${escJs(p.n)}','${escJs(p.o)}')" title="Editar">✏️</button>
-            <button class="btn-icon" onclick="removePt(${day},${realIdx})" title="Remover">×</button>
+            <button class="btn-icon btn-edit" onclick="startEdit(${day},${ri},'${escJs(p.n)}','${escJs(p.o)}')">✏️</button>
+            <button class="btn-icon" onclick="removePt(${day},${ri})">×</button>
           </div>`;
         }
       });
     }
-
-    card.innerHTML = `
+    card.innerHTML=`
       <div class="day-header">
         <span class="dlabel">Dia ${String(day).padStart(2,'0')}</span>
         <span class="day-count">${patients.length} paciente${patients.length!==1?'s':''}</span>
+        <button class="btn-del-day" onclick="deleteDay(${day})">🗑️ Apagar dia</button>
       </div>
       ${rows}
       <div class="add-row">
@@ -190,48 +271,57 @@ function renderCards(){
         <button class="btn-add" onclick="addPt(${day})">+</button>
       </div>`;
     main.appendChild(card);
-
-    if(editState && editState.day==day){
-      setTimeout(()=>{ const el=document.getElementById('ei-n'); if(el){el.focus();el.select();} },30);
-    }
+    if(editState&&editState.day==day){ setTimeout(()=>{const el=document.getElementById('ei-n');if(el){el.focus();el.select();}},30); }
   });
 }
 
 function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function escJs(s){  return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+function escJs(s){ return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
 
 function setDay(d){ activeDay=d; searchQ=''; document.getElementById('search').value=''; cancelEdit(); render();
-  if(d!=='all') setTimeout(()=>{ const c=document.getElementById('card-'+d); if(c) c.scrollIntoView({behavior:'smooth',block:'start'}); },80); }
-
+  if(d!=='all') setTimeout(()=>{const c=document.getElementById('card-'+d);if(c)c.scrollIntoView({behavior:'smooth',block:'start'});},80); }
 function doSearch(q){ searchQ=q.trim(); activeDay='all'; cancelEdit(); render(); }
 
 function addPt(day){
-  const ni=document.getElementById('an-'+day);
-  const oi=document.getElementById('ao-'+day);
+  const ni=document.getElementById('an-'+day), oi=document.getElementById('ao-'+day);
   const name=ni.value.trim(); if(!name) return;
-  data[day].push({n:name,o:oi.value.trim()});
-  save(data); ni.value=''; oi.value=''; render();
-  setTimeout(()=>{ const el=document.getElementById('an-'+day); if(el) el.focus(); },60);
+  data[day].push({n:name,o:oi.value.trim()}); save(data); ni.value=''; oi.value=''; render();
+  setTimeout(()=>{const el=document.getElementById('an-'+day);if(el)el.focus();},60);
 }
-
 function removePt(day,idx){
   if(!confirm('Remover "'+data[day][idx].n+'"?')) return;
   data[day].splice(idx,1); save(data); cancelEdit(); render();
+}
+function deleteDay(day){
+  const n=(data[day]||[]).length;
+  const msg=n>0?`Apagar o Dia ${day} com ${n} paciente${n!==1?'s':''}? Isso não pode ser desfeito.`:`Apagar o Dia ${day}?`;
+  if(!confirm(msg)) return;
+  delete data[day]; save(data);
+  if(activeDay==day) activeDay='all';
+  render();
+}
+function openModal(){ document.getElementById('modal-add').classList.add('open'); setTimeout(()=>document.getElementById('new-day-input').focus(),50); }
+function closeModal(){ document.getElementById('modal-add').classList.remove('open'); document.getElementById('new-day-input').value=''; }
+function confirmAddDay(){
+  const v=parseInt(document.getElementById('new-day-input').value);
+  if(!v||v<1||v>31){ alert('Digite um dia entre 1 e 31.'); return; }
+  if(data[v]!==undefined){ alert('O Dia '+v+' já existe!'); return; }
+  data[v]=[]; save(data); closeModal(); activeDay=v; render();
+  setTimeout(()=>{const c=document.getElementById('card-'+v);if(c)c.scrollIntoView({behavior:'smooth',block:'start'});},80);
 }
 
 function startEdit(day,idx,name,obs){ editState={day,idx}; editName=name; editObs=obs; render(); }
 function cancelEdit(){ editState=null; render(); }
 function saveEdit(day,idx){
   if(!editName.trim()) return;
-  data[day][idx]={n:editName.trim(),o:editObs.trim()};
-  save(data); editState=null; render();
+  data[day][idx]={n:editName.trim(),o:editObs.trim()}; save(data); editState=null; render();
 }
 function edKey(e,day){
   if(e.key==='Enter') saveEdit(day,editState.idx);
   if(e.key==='Escape') cancelEdit();
 }
 
-render();
+if(sessionStorage.getItem('vz_auth')==='1') render();
 </script>
 </body>
 </html>
