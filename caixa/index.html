@@ -229,6 +229,11 @@ body{
   box-shadow:0 1px 2px rgba(0,0,0,0.04);
 }
 .day-card.weekend{background:#FFF8E8;}
+.day-card.holiday{background:#FCE9EC;border:1px solid #F2C3CC;}
+.holiday-tag{
+  font-size:10.5px;font-weight:700;color:#A3192B;
+  margin-top:3px;
+}
 .day-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
 .day-date{font-size:14px;font-weight:700;}
 .day-week{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;}
@@ -676,7 +681,67 @@ async function initApp(){
   renderAll();
 }
 
-const AVAILABLE_YEARS = [2026, 2027, 2028, 2029, 2030];
+/* ============================================================
+   FERIADOS — Macuco, RJ
+============================================================ */
+function calcEaster(year){
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19*a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2*e + 2*i - h - k) % 7;
+  const m = Math.floor((a + 11*h + 22*l) / 451);
+  const month = Math.floor((h + l - 7*m + 114) / 31);
+  const day = ((h + l - 7*m + 114) % 31) + 1;
+  return new Date(year, month-1, day);
+}
+function addDays(date, days){
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+function dkey(date){
+  return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
+}
+function getHolidaysForYear(year){
+  const easter = calcEaster(year);
+  const map = {};
+  // Nacionais fixos
+  map[dkey(new Date(year,0,1))]  = 'Confraternização Universal';
+  map[dkey(new Date(year,3,21))] = 'Tiradentes';
+  map[dkey(new Date(year,4,1))]  = 'Dia do Trabalho';
+  map[dkey(new Date(year,8,7))]  = 'Independência do Brasil';
+  map[dkey(new Date(year,9,12))] = 'Nossa Senhora Aparecida';
+  map[dkey(new Date(year,10,2))] = 'Finados';
+  map[dkey(new Date(year,10,15))]= 'Proclamação da República';
+  map[dkey(new Date(year,11,25))]= 'Natal';
+  // Estaduais RJ
+  map[dkey(new Date(year,3,23))] = 'Dia de São Jorge (RJ)';
+  map[dkey(new Date(year,10,20))]= 'Consciência Negra (RJ)';
+  // Municipais Macuco
+  map[dkey(new Date(year,5,24))] = 'São João Batista (Macuco)';
+  map[dkey(new Date(year,11,28))]= 'Aniversário de Macuco';
+  // Móveis (baseados na Páscoa)
+  map[dkey(addDays(easter,-47))] = 'Carnaval';
+  map[dkey(addDays(easter,-46))] = 'Quarta-feira de Cinzas';
+  map[dkey(addDays(easter,-2))]  = 'Sexta-feira Santa';
+  map[dkey(addDays(easter,60))]  = 'Corpus Christi';
+  return map;
+}
+let HOLIDAYS_CACHE = {};
+function getHoliday(year, monthNum, day){
+  if(!HOLIDAYS_CACHE[year]) HOLIDAYS_CACHE[year] = getHolidaysForYear(year);
+  const key = year+'-'+String(monthNum).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+  return HOLIDAYS_CACHE[year][key] || null;
+}
+
+const AVAILABLE_YEARS = [2026,2027,2028,2029,2030,2031,2032,2033,2034,2035,2036,2037,2038,2039,2040];
 
 function openYearModal(){
   const wrap = document.getElementById('year-options');
@@ -814,15 +879,18 @@ function renderReceitas(){
     const date = new Date(currentYear, m.num-1, d);
     const wd = WEEKDAYS[date.getDay()];
     const isWeekend = date.getDay()===0 || date.getDay()===6;
+    const holidayName = getHoliday(currentYear, m.num, d);
+    const isHoliday = !!holidayName;
     const dayData = rec[d] || {dinheiro:'',pix:'',debito:'',credito:''};
     const dayTotal = (parseFloat(dayData.dinheiro)||0)+(parseFloat(dayData.pix)||0)+(parseFloat(dayData.debito)||0)+(parseFloat(dayData.credito)||0);
 
     daysHtml += `
-      <div class="day-card ${isWeekend?'weekend':''}">
+      <div class="day-card ${isWeekend?'weekend':''} ${isHoliday?'holiday':''}">
         <div class="day-head">
           <div>
             <span class="day-date">${String(d).padStart(2,'0')}/${String(m.num).padStart(2,'0')}</span>
             <span class="day-week"> · ${wd}</span>
+            ${isHoliday?`<div class="holiday-tag">🎉 ${escapeHtml(holidayName)}</div>`:''}
           </div>
           <div class="day-total">${dayTotal>0?fmtBRL(dayTotal):''}</div>
         </div>
