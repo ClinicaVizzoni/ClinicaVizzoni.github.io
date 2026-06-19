@@ -1067,6 +1067,27 @@ function renderDespesas(){
     });
   }
 
+  // Totais por dia (apenas pagas, com data preenchida)
+  const dayTotals = {};
+  desp.forEach(e=>{
+    if(e.status==='PAGO' && e.data){
+      dayTotals[e.data] = (dayTotals[e.data]||0) + (parseFloat(e.valor)||0);
+    }
+  });
+  const dayEntries = Object.entries(dayTotals).sort((a,b)=>a[0].localeCompare(b[0]));
+
+  let dayHtml = '';
+  if(dayEntries.length > 0){
+    dayHtml = `<div class="section-block-title">Total por dia (pagas)</div>`;
+    dayEntries.forEach(([dateIso,total])=>{
+      dayHtml += `
+        <div class="cat-row">
+          <div class="cat-name">${formatDateBR(dateIso)}</div>
+          <div class="cat-value">${fmtBRL(total)}</div>
+        </div>`;
+    });
+  }
+
   if(sorted.length===0){
     document.getElementById('expenses-list').innerHTML = `
       <div class="empty-state">
@@ -1077,7 +1098,7 @@ function renderDespesas(){
     return;
   }
 
-  let html = catHtml + `<div class="section-block-title">Lançamentos</div>`;
+  let html = catHtml + dayHtml + `<div class="section-block-title">Lançamentos</div>`;
   sorted.forEach(e=>{
     const dateFmt = e.data ? formatDateBR(e.data) : '—';
     html += `
