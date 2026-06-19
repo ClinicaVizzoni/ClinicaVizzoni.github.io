@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Vizzoni Caixa">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Vizzoni — Fluxo de Caixa</title>
+<style>
+:root{
+  --wine:#7A1530;
+  --wine-dark:#54101F;
+  --wine-light:#A33450;
+  --gold:#C9A24B;
+  --cream:#FBF7F0;
+  --paper:#FFFFFF;
+  --ink:#221318;
+  --muted:#8A7A80;
+  --line:#EEE2E4;
+  --green:#1E6B3E;
+  --green-bg:#E5F3EA;
+  --red:#A3192B;
+  --red-bg:#FBEAEC;
+  --r:14px;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
+  background:var(--cream);
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior:none;
+}
+.serif{font-family:Georgia,'Playfair Display',serif;}
+
+/* ============ LOGIN ============ */
+#login-screen{
+  position:fixed;inset:0;
+  background:linear-gradient(165deg,var(--wine-dark),var(--wine) 55%,var(--wine-light));
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;
+  padding:32px;
+  z-index:1000;
+}
+.login-card{
+  width:100%;max-width:360px;
+  text-align:center;
+}
+.login-brand{
+  font-size:13px;
+  letter-spacing:3px;
+  color:rgba(255,255,255,0.55);
+  text-transform:uppercase;
+  margin-bottom:6px;
+}
+.login-title{
+  font-size:30px;
+  font-weight:700;
+  color:#fff;
+  margin-bottom:6px;
+}
+.login-sub{
+  font-size:14px;
+  color:rgba(255,255,255,0.6);
+  margin-bottom:36px;
+}
+.login-input{
+  width:100%;
+  background:rgba(255,255,255,0.1);
+  border:1px solid rgba(255,255,255,0.25);
+  border-radius:12px;
+  padding:16px 18px;
+  font-size:17px;
+  color:#fff;
+  margin-bottom:14px;
+  outline:none;
+}
+.login-input::placeholder{color:rgba(255,255,255,0.45);}
+.login-btn{
+  width:100%;
+  background:var(--gold);
+  border:none;
+  border-radius:12px;
+  padding:16px;
+  font-size:16px;
+  font-weight:700;
+  color:var(--wine-dark);
+  margin-top:8px;
+}
+.login-error{
+  color:#FFD9DE;
+  font-size:13px;
+  margin-top:14px;
+  min-height:16px;
+}
+
+/* ============ APP SHELL ============ */
+#app{display:none;min-height:100vh;padding-bottom:calc(78px + var(--safe-bottom));}
+
+.topbar{
+  background:var(--wine);
+  color:#fff;
+  padding:calc(var(--safe-top) + 14px) 18px 16px;
+  position:sticky;top:0;z-index:90;
+}
+.topbar-row{display:flex;align-items:center;justify-content:space-between;}
+.topbar-title{font-size:19px;font-weight:700;letter-spacing:-0.3px;}
+.topbar-sub{font-size:11.5px;color:rgba(255,255,255,0.55);margin-top:1px;}
+.topbar-logout{
+  background:rgba(255,255,255,0.14);
+  border:1px solid rgba(255,255,255,0.25);
+  color:#fff;border-radius:8px;
+  padding:7px 12px;font-size:12.5px;font-weight:600;
+}
+
+/* Month selector strip */
+.month-strip{
+  display:flex;gap:8px;overflow-x:auto;
+  padding:14px 18px 0;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.month-strip::-webkit-scrollbar{display:none;}
+.month-chip{
+  flex:0 0 auto;
+  background:rgba(255,255,255,0.12);
+  border:1px solid rgba(255,255,255,0.2);
+  color:rgba(255,255,255,0.75);
+  border-radius:20px;
+  padding:8px 16px;
+  font-size:13px;font-weight:600;
+  white-space:nowrap;
+}
+.month-chip.active{
+  background:var(--gold);
+  border-color:var(--gold);
+  color:var(--wine-dark);
+}
+
+.content{padding:18px;}
+
+/* Summary cards */
+.summary-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;
+}
+.sum-card{
+  background:var(--paper);
+  border-radius:var(--r);
+  padding:16px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.06);
+}
+.sum-label{font-size:11.5px;color:var(--muted);font-weight:600;letter-spacing:0.3px;text-transform:uppercase;margin-bottom:6px;}
+.sum-value{font-size:19px;font-weight:700;}
+.sum-value.green{color:var(--green);}
+.sum-value.red{color:var(--red);}
+.result-card{
+  grid-column:1/-1;
+  background:var(--wine-dark);
+  border-radius:var(--r);
+  padding:18px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.result-label{font-size:12px;color:rgba(255,255,255,0.6);font-weight:600;text-transform:uppercase;letter-spacing:0.3px;}
+.result-value{font-size:24px;font-weight:800;color:#fff;margin-top:2px;}
+.result-badge{
+  font-size:11px;font-weight:700;padding:6px 12px;border-radius:20px;
+  text-transform:uppercase;letter-spacing:0.3px;
+}
+.result-badge.green{background:var(--green-bg);color:var(--green);}
+.result-badge.red{background:var(--red-bg);color:var(--red);}
+
+/* Section tabs */
+.section-tabs{
+  display:flex;gap:6px;
+  background:#F0E5E8;
+  border-radius:12px;
+  padding:4px;
+  margin:18px 0 14px;
+}
+.section-tab{
+  flex:1;text-align:center;
+  padding:10px 0;
+  border-radius:9px;
+  font-size:13.5px;font-weight:700;
+  color:var(--muted);
+}
+.section-tab.active{background:var(--paper);color:var(--wine);box-shadow:0 1px 3px rgba(0,0,0,0.08);}
+
+/* Payment method summary */
+.pm-row{
+  display:flex;justify-content:space-between;align-items:center;
+  background:var(--paper);
+  border-radius:12px;
+  padding:14px 16px;
+  margin-bottom:8px;
+  box-shadow:0 1px 2px rgba(0,0,0,0.04);
+}
+.pm-left{display:flex;align-items:center;gap:10px;}
+.pm-dot{width:9px;height:9px;border-radius:50%;}
+.pm-name{font-size:14.5px;font-weight:600;}
+.pm-value{font-size:15px;font-weight:700;color:var(--green);}
+
+/* Day rows (receitas) */
+.day-card{
+  background:var(--paper);
+  border-radius:12px;
+  padding:14px 16px;
+  margin-bottom:8px;
+  box-shadow:0 1px 2px rgba(0,0,0,0.04);
+}
+.day-card.weekend{background:#FFF8E8;}
+.day-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.day-date{font-size:14px;font-weight:700;}
+.day-week{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;}
+.day-total{font-size:14px;font-weight:700;color:var(--green);}
+.day-inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.day-input-wrap{position:relative;}
+.day-input-label{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:3px;display:block;}
+.day-input{
+  width:100%;
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:9px 10px;
+  font-size:14.5px;
+  background:#FCFAF8;
+  color:var(--ink);
+  font-weight:600;
+}
+.day-input:focus{outline:none;border-color:var(--wine-light);background:#fff;}
+
+/* Expense cards */
+.exp-card{
+  background:var(--paper);
+  border-radius:12px;
+  padding:14px 16px;
+  margin-bottom:8px;
+  box-shadow:0 1px 2px rgba(0,0,0,0.04);
+  border-left:4px solid var(--red);
+}
+.exp-card.paid{border-left-color:var(--green);}
+.exp-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+.exp-desc{font-size:15px;font-weight:700;flex:1;}
+.exp-value{font-size:15.5px;font-weight:800;color:var(--red);white-space:nowrap;}
+.exp-card.paid .exp-value{color:var(--green);}
+.exp-meta{display:flex;gap:8px;align-items:center;margin-top:7px;flex-wrap:wrap;}
+.exp-tag{
+  font-size:11px;font-weight:600;
+  padding:3px 9px;border-radius:6px;
+  background:#F3ECEE;color:var(--muted);
+}
+.exp-date{font-size:12px;color:var(--muted);}
+.status-toggle{
+  display:flex;border-radius:8px;overflow:hidden;border:1px solid var(--line);margin-top:10px;
+}
+.status-btn{
+  flex:1;text-align:center;padding:8px 0;
+  font-size:12px;font-weight:700;
+  background:#fff;color:var(--muted);
+}
+.status-btn.active.pendente{background:#FCEFD8;color:#9A6B16;}
+.status-btn.active.pago{background:var(--green-bg);color:var(--green);}
+.exp-actions{display:flex;gap:8px;margin-top:10px;}
+.exp-action-btn{
+  flex:1;text-align:center;padding:8px 0;
+  border-radius:8px;font-size:12.5px;font-weight:700;
+  background:#F6F0F1;color:var(--wine);
+}
+.exp-action-btn.delete{background:var(--red-bg);color:var(--red);}
+
+/* FAB */
+.fab{
+  position:fixed;
+  right:18px;bottom:calc(94px + var(--safe-bottom));
+  width:58px;height:58px;border-radius:50%;
+  background:var(--wine);
+  color:#fff;font-size:28px;font-weight:400;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 6px 18px rgba(122,21,48,0.4);
+  z-index:80;
+  line-height:0;
+}
+
+/* Bottom nav */
+.bottom-nav{
+  position:fixed;left:0;right:0;bottom:0;
+  background:rgba(255,255,255,0.97);
+  backdrop-filter:blur(10px);
+  border-top:1px solid var(--line);
+  display:flex;
+  padding:10px 8px calc(10px + var(--safe-bottom));
+  z-index:90;
+}
+.nav-item{
+  flex:1;text-align:center;
+  font-size:11px;font-weight:600;color:var(--muted);
+}
+.nav-item.active{color:var(--wine);}
+.nav-icon{font-size:21px;display:block;margin-bottom:2px;}
+
+/* Modal */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(34,19,24,0.5);
+  display:none;align-items:flex-end;justify-content:center;
+  z-index:200;
+}
+.modal-overlay.open{display:flex;}
+.modal-sheet{
+  background:var(--cream);
+  width:100%;max-width:480px;
+  border-radius:20px 20px 0 0;
+  padding:22px 20px calc(22px + var(--safe-bottom));
+  max-height:85vh;overflow-y:auto;
+}
+.modal-handle{width:40px;height:4px;background:var(--line);border-radius:3px;margin:0 auto 18px;}
+.modal-title{font-size:19px;font-weight:800;margin-bottom:18px;}
+.field-label{font-size:12.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:6px;display:block;}
+.field{margin-bottom:16px;}
+.field-input{
+  width:100%;border:1.5px solid var(--line);border-radius:10px;
+  padding:13px 14px;font-size:15.5px;background:#fff;color:var(--ink);
+}
+.field-input:focus{outline:none;border-color:var(--wine-light);}
+select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%238A7A80' d='M4 6l4 4 4-4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;}
+.modal-btn-row{display:flex;gap:10px;margin-top:6px;}
+.modal-btn{
+  flex:1;padding:15px;border-radius:12px;font-size:15px;font-weight:700;text-align:center;
+}
+.modal-btn.primary{background:var(--wine);color:#fff;}
+.modal-btn.secondary{background:#F0E5E8;color:var(--wine);}
+
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted);}
+.empty-state-icon{font-size:38px;margin-bottom:10px;opacity:0.4;}
+.empty-state-text{font-size:14px;}
+
+.toast{
+  position:fixed;bottom:calc(100px + var(--safe-bottom));left:50%;
+  transform:translateX(-50%) translateY(10px);
+  background:var(--ink);color:#fff;
+  padding:12px 20px;border-radius:30px;font-size:13.5px;font-weight:600;
+  opacity:0;transition:all 0.25s;z-index:300;pointer-events:none;
+  white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+.loading-screen{
+  position:fixed;inset:0;background:var(--cream);
+  display:flex;align-items:center;justify-content:center;z-index:500;
+  flex-direction:column;gap:14px;
+}
+.spinner{
+  width:34px;height:34px;border:3px solid var(--line);
+  border-top-color:var(--wine);border-radius:50%;
+  animation:spin 0.8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.section-block-title{
+  font-size:13px;font-weight:800;color:var(--muted);
+  text-transform:uppercase;letter-spacing:0.5px;
+  margin:20px 0 10px;
+}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-brand serif">Clínica Vizzoni</div>
+    <div class="login-title serif">Fluxo de Caixa</div>
+    <div class="login-sub">Acesso restrito</div>
+    <input type="password" id="login-pass" class="login-input" placeholder="Senha de acesso" autocomplete="off">
+    <button class="login-btn" onclick="tryLogin()">Entrar</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- ============ LOADING ============ -->
+<div class="loading-screen" id="loading-screen" style="display:none;">
+  <div class="spinner"></div>
+  <div style="color:var(--muted);font-size:13.5px;">Carregando dados...</div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app">
+
+  <div class="topbar">
+    <div class="topbar-row">
+      <div>
+        <div class="topbar-title serif">Clínica Vizzoni</div>
+        <div class="topbar-sub" id="month-label">Junho 2026</div>
+      </div>
+      <button class="topbar-logout" onclick="logout()">Sair</button>
+    </div>
+    <div class="month-strip" id="month-strip"></div>
+  </div>
+
+  <div class="content">
+
+    <!-- Resumo do mês -->
+    <div class="summary-grid">
+      <div class="sum-card">
+        <div class="sum-label">Receitas</div>
+        <div class="sum-value green" id="sum-receitas">R$ 0,00</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-label">Despesas pagas</div>
+        <div class="sum-value red" id="sum-despesas">R$ 0,00</div>
+      </div>
+      <div class="result-card">
+        <div>
+          <div class="result-label">Resultado do mês</div>
+          <div class="result-value" id="sum-resultado">R$ 0,00</div>
+        </div>
+        <div class="result-badge" id="result-badge">—</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="section-tabs">
+      <div class="section-tab active" id="tab-receitas" onclick="switchTab('receitas')">Receitas</div>
+      <div class="section-tab" id="tab-despesas" onclick="switchTab('despesas')">Despesas</div>
+    </div>
+
+    <!-- RECEITAS VIEW -->
+    <div id="view-receitas">
+      <div class="section-block-title">Por forma de pagamento</div>
+      <div id="pm-summary"></div>
+
+      <div class="section-block-title">Lançamentos diários</div>
+      <div id="days-list"></div>
+    </div>
+
+    <!-- DESPESAS VIEW -->
+    <div id="view-despesas" style="display:none;">
+      <div id="expenses-list"></div>
+    </div>
+
+  </div>
+
+  <div class="fab" id="fab" onclick="openExpenseModal()">+</div>
+
+  <div class="bottom-nav">
+    <div class="nav-item active">
+      <span class="nav-icon">📊</span>
+      Fluxo de Caixa
+    </div>
+  </div>
+
+</div>
+
+<!-- ============ MODAL: NOVA DESPESA ============ -->
+<div class="modal-overlay" id="expense-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="expense-modal-title">Nova Despesa</div>
+
+    <div class="field">
+      <label class="field-label">Data</label>
+      <input type="date" class="field-input" id="exp-data">
+    </div>
+    <div class="field">
+      <label class="field-label">Descrição</label>
+      <input type="text" class="field-input" id="exp-desc" placeholder="Ex: Dental Cremer">
+    </div>
+    <div class="field">
+      <label class="field-label">Categoria</label>
+      <select class="field-input" id="exp-cat">
+        <option value="Fornecedor">Fornecedor</option>
+        <option value="Fixo">Fixo</option>
+        <option value="Folha de Pagamento">Folha de Pagamento</option>
+        <option value="Pro Labore">Pro Labore</option>
+        <option value="Impostos">Impostos</option>
+        <option value="Honorarios">Honorários</option>
+        <option value="Cartao">Cartão</option>
+        <option value="Servicos">Serviços</option>
+        <option value="Manutencao">Manutenção</option>
+        <option value="Compras">Compras</option>
+        <option value="Outros">Outros</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="field-label">Valor (R$)</label>
+      <input type="number" step="0.01" class="field-input" id="exp-valor" placeholder="0,00">
+    </div>
+    <div class="field">
+      <label class="field-label">Status</label>
+      <select class="field-input" id="exp-status">
+        <option value="PENDENTE">Pendente</option>
+        <option value="PAGO">Pago</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="field-label">Observações</label>
+      <input type="text" class="field-input" id="exp-obs" placeholder="Opcional">
+    </div>
+
+    <div class="modal-btn-row">
+      <div class="modal-btn secondary" onclick="closeExpenseModal()">Cancelar</div>
+      <div class="modal-btn primary" onclick="saveExpense()">Salvar</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   CONFIG — JSONBin
+============================================================ */
+const JSONBIN_BIN_ID = '6a34c424da38895dfedb47c9';
+const JSONBIN_API_KEY = '$2a$10$Nz6iuJHQdnLFBavcEf6hbuX3qXN2cmaEJKY99Wax3q08EsrgD2O0W';
+const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
+
+const APP_PASSWORD = 'vizzoni2026';
+
+/* ============================================================
+   STATE
+============================================================ */
+const MONTHS = [
+  {key:'jun', label:'Junho', num:6, days:30},
+  {key:'jul', label:'Julho', num:7, days:31},
+  {key:'ago', label:'Agosto', num:8, days:31},
+  {key:'set', label:'Setembro', num:9, days:30},
+  {key:'out', label:'Outubro', num:10, days:31},
+  {key:'nov', label:'Novembro', num:11, days:30},
+  {key:'dez', label:'Dezembro', num:12, days:31},
+];
+const WEEKDAYS = ['DOM','SEG','TER','QUA','QUI','SEX','SAB'];
+
+let currentMonth = 'jun';
+let currentTab = 'receitas';
+let editingExpenseId = null;
+
+let DATA = { receitas: {}, despesas: {} };
+// receitas[monthKey][day] = {dinheiro,pix,debito,credito}
+// despesas[monthKey] = [{id,data,desc,cat,valor,status,obs}]
+
+/* ============================================================
+   AUTH
+============================================================ */
+function tryLogin(){
+  const val = document.getElementById('login-pass').value;
+  if(val === APP_PASSWORD){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').style.display='block';
+    sessionStorage.setItem('vizzoni_auth','1');
+    initApp();
+  } else {
+    document.getElementById('login-error').textContent = 'Senha incorreta. Tente novamente.';
+  }
+}
+document.getElementById('login-pass').addEventListener('keypress', e=>{
+  if(e.key==='Enter') tryLogin();
+});
+function logout(){
+  sessionStorage.removeItem('vizzoni_auth');
+  location.reload();
+}
+
+/* ============================================================
+   CLOUD STORAGE
+============================================================ */
+async function loadData(){
+  try{
+    const res = await fetch(JSONBIN_URL + '/latest', {
+      headers:{ 'X-Master-Key': JSONBIN_API_KEY }
+    });
+    if(!res.ok) throw new Error('fetch failed');
+    const json = await res.json();
+    if(json.record && json.record.receitas){
+      DATA = json.record;
+    }
+  }catch(e){
+    console.error('Erro ao carregar dados', e);
+    showToast('Não foi possível carregar os dados salvos');
+  }
+}
+
+let saveTimeout = null;
+function saveData(){
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(async ()=>{
+    try{
+      await fetch(JSONBIN_URL, {
+        method:'PUT',
+        headers:{
+          'Content-Type':'application/json',
+          'X-Master-Key': JSONBIN_API_KEY
+        },
+        body: JSON.stringify(DATA)
+      });
+    }catch(e){
+      console.error('Erro ao salvar', e);
+      showToast('Erro ao salvar — verifique a conexão');
+    }
+  }, 600);
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+async function initApp(){
+  document.getElementById('loading-screen').style.display='flex';
+  buildMonthStrip();
+  await loadData();
+  document.getElementById('loading-screen').style.display='none';
+  renderAll();
+}
+
+function buildMonthStrip(){
+  const strip = document.getElementById('month-strip');
+  strip.innerHTML = MONTHS.map(m=>
+    `<div class="month-chip ${m.key===currentMonth?'active':''}" data-month="${m.key}" onclick="selectMonth('${m.key}')">${m.label}</div>`
+  ).join('');
+}
+
+function selectMonth(key){
+  currentMonth = key;
+  document.querySelectorAll('.month-chip').forEach(c=>{
+    c.classList.toggle('active', c.dataset.month===key);
+  });
+  const m = MONTHS.find(x=>x.key===key);
+  document.getElementById('month-label').textContent = m.label + ' 2026';
+  renderAll();
+}
+
+function switchTab(tab){
+  currentTab = tab;
+  document.getElementById('tab-receitas').classList.toggle('active', tab==='receitas');
+  document.getElementById('tab-despesas').classList.toggle('active', tab==='despesas');
+  document.getElementById('view-receitas').style.display = tab==='receitas' ? 'block':'none';
+  document.getElementById('view-despesas').style.display = tab==='despesas' ? 'block':'none';
+  document.getElementById('fab').style.display = tab==='despesas' ? 'flex':'none';
+}
+
+/* ============================================================
+   RENDER
+============================================================ */
+function renderAll(){
+  renderSummary();
+  renderReceitas();
+  renderDespesas();
+  document.getElementById('fab').style.display = currentTab==='despesas' ? 'flex':'none';
+}
+
+function getMonthInfo(){ return MONTHS.find(m=>m.key===currentMonth); }
+
+function getReceitasMonth(){
+  if(!DATA.receitas[currentMonth]) DATA.receitas[currentMonth] = {};
+  return DATA.receitas[currentMonth];
+}
+function getDespesasMonth(){
+  if(!DATA.despesas[currentMonth]) DATA.despesas[currentMonth] = [];
+  return DATA.despesas[currentMonth];
+}
+
+function calcTotalReceitas(){
+  const rec = getReceitasMonth();
+  let total = 0;
+  Object.values(rec).forEach(d=>{
+    total += (parseFloat(d.dinheiro)||0)+(parseFloat(d.pix)||0)+(parseFloat(d.debito)||0)+(parseFloat(d.credito)||0);
+  });
+  return total;
+}
+function calcTotalDespesasPagas(){
+  const desp = getDespesasMonth();
+  return desp.filter(e=>e.status==='PAGO').reduce((s,e)=>s+(parseFloat(e.valor)||0),0);
+}
+
+function fmtBRL(v){
+  return 'R$ ' + (v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function renderSummary(){
+  const totalRec = calcTotalReceitas();
+  const totalDesp = calcTotalDespesasPagas();
+  const resultado = totalRec - totalDesp;
+
+  document.getElementById('sum-receitas').textContent = fmtBRL(totalRec);
+  document.getElementById('sum-despesas').textContent = fmtBRL(totalDesp);
+  document.getElementById('sum-resultado').textContent = fmtBRL(resultado);
+
+  const badge = document.getElementById('result-badge');
+  if(resultado > 0){
+    badge.textContent = 'Superávit';
+    badge.className = 'result-badge green';
+  } else if(resultado < 0){
+    badge.textContent = 'Déficit';
+    badge.className = 'result-badge red';
+  } else {
+    badge.textContent = '—';
+    badge.className = 'result-badge';
+  }
+}
+
+function renderReceitas(){
+  const m = getMonthInfo();
+  const rec = getReceitasMonth();
+
+  // Payment method summary
+  let totDinheiro=0, totPix=0, totDebito=0, totCredito=0;
+  Object.values(rec).forEach(d=>{
+    totDinheiro += parseFloat(d.dinheiro)||0;
+    totPix += parseFloat(d.pix)||0;
+    totDebito += parseFloat(d.debito)||0;
+    totCredito += parseFloat(d.credito)||0;
+  });
+
+  const pmHtml = `
+    <div class="pm-row"><div class="pm-left"><div class="pm-dot" style="background:#2E7D32"></div><div class="pm-name">Dinheiro</div></div><div class="pm-value">${fmtBRL(totDinheiro)}</div></div>
+    <div class="pm-row"><div class="pm-left"><div class="pm-dot" style="background:#1565C0"></div><div class="pm-name">Pix</div></div><div class="pm-value">${fmtBRL(totPix)}</div></div>
+    <div class="pm-row"><div class="pm-left"><div class="pm-dot" style="background:#6A1B9A"></div><div class="pm-name">Débito</div></div><div class="pm-value">${fmtBRL(totDebito)}</div></div>
+    <div class="pm-row"><div class="pm-left"><div class="pm-dot" style="background:#BF360C"></div><div class="pm-name">Crédito</div></div><div class="pm-value">${fmtBRL(totCredito)}</div></div>
+  `;
+  document.getElementById('pm-summary').innerHTML = pmHtml;
+
+  // Day-by-day list
+  let daysHtml = '';
+  for(let d=1; d<=m.days; d++){
+    const date = new Date(2026, m.num-1, d);
+    const wd = WEEKDAYS[date.getDay()];
+    const isWeekend = date.getDay()===0 || date.getDay()===6;
+    const dayData = rec[d] || {dinheiro:'',pix:'',debito:'',credito:''};
+    const dayTotal = (parseFloat(dayData.dinheiro)||0)+(parseFloat(dayData.pix)||0)+(parseFloat(dayData.debito)||0)+(parseFloat(dayData.credito)||0);
+
+    daysHtml += `
+      <div class="day-card ${isWeekend?'weekend':''}">
+        <div class="day-head">
+          <div>
+            <span class="day-date">${String(d).padStart(2,'0')}/${String(m.num).padStart(2,'0')}</span>
+            <span class="day-week"> · ${wd}</span>
+          </div>
+          <div class="day-total">${dayTotal>0?fmtBRL(dayTotal):''}</div>
+        </div>
+        <div class="day-inputs">
+          <div class="day-input-wrap">
+            <label class="day-input-label">Dinheiro</label>
+            <input type="number" inputmode="decimal" class="day-input" value="${dayData.dinheiro||''}" placeholder="0,00" onchange="updateReceita(${d},'dinheiro',this.value)">
+          </div>
+          <div class="day-input-wrap">
+            <label class="day-input-label">Pix</label>
+            <input type="number" inputmode="decimal" class="day-input" value="${dayData.pix||''}" placeholder="0,00" onchange="updateReceita(${d},'pix',this.value)">
+          </div>
+          <div class="day-input-wrap">
+            <label class="day-input-label">Débito</label>
+            <input type="number" inputmode="decimal" class="day-input" value="${dayData.debito||''}" placeholder="0,00" onchange="updateReceita(${d},'debito',this.value)">
+          </div>
+          <div class="day-input-wrap">
+            <label class="day-input-label">Crédito</label>
+            <input type="number" inputmode="decimal" class="day-input" value="${dayData.credito||''}" placeholder="0,00" onchange="updateReceita(${d},'credito',this.value)">
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  document.getElementById('days-list').innerHTML = daysHtml;
+}
+
+function updateReceita(day, field, value){
+  const rec = getReceitasMonth();
+  if(!rec[day]) rec[day] = {dinheiro:'',pix:'',debito:'',credito:''};
+  rec[day][field] = value;
+  saveData();
+  renderSummary();
+  renderReceitas();
+}
+
+function renderDespesas(){
+  const desp = getDespesasMonth();
+  const sorted = [...desp].sort((a,b)=>{
+    if(!a.data) return 1;
+    if(!b.data) return -1;
+    return a.data.localeCompare(b.data);
+  });
+
+  if(sorted.length===0){
+    document.getElementById('expenses-list').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">📋</div>
+        <div class="empty-state-text">Nenhuma despesa lançada neste mês.<br>Toque no + para adicionar.</div>
+      </div>
+    `;
+    return;
+  }
+
+  let html = '';
+  sorted.forEach(e=>{
+    const dateFmt = e.data ? formatDateBR(e.data) : '—';
+    html += `
+      <div class="exp-card ${e.status==='PAGO'?'paid':''}">
+        <div class="exp-top">
+          <div class="exp-desc">${escapeHtml(e.desc)}</div>
+          <div class="exp-value">${e.valor ? fmtBRL(parseFloat(e.valor)) : '—'}</div>
+        </div>
+        <div class="exp-meta">
+          <span class="exp-tag">${escapeHtml(e.cat||'Outros')}</span>
+          <span class="exp-date">${dateFmt}</span>
+        </div>
+        <div class="status-toggle">
+          <div class="status-btn ${e.status==='PENDENTE'?'active pendente':''}" onclick="toggleStatus('${e.id}','PENDENTE')">Pendente</div>
+          <div class="status-btn ${e.status==='PAGO'?'active pago':''}" onclick="toggleStatus('${e.id}','PAGO')">Pago</div>
+        </div>
+        <div class="exp-actions">
+          <div class="exp-action-btn" onclick="editExpense('${e.id}')">Editar</div>
+          <div class="exp-action-btn delete" onclick="deleteExpense('${e.id}')">Excluir</div>
+        </div>
+      </div>
+    `;
+  });
+  document.getElementById('expenses-list').innerHTML = html;
+}
+
+function formatDateBR(iso){
+  const parts = iso.split('-');
+  if(parts.length!==3) return iso;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str||'';
+  return div.innerHTML;
+}
+
+function toggleStatus(id, status){
+  const desp = getDespesasMonth();
+  const item = desp.find(e=>e.id===id);
+  if(item){
+    item.status = status;
+    saveData();
+    renderSummary();
+    renderDespesas();
+  }
+}
+
+/* ============================================================
+   EXPENSE MODAL
+============================================================ */
+function openExpenseModal(){
+  editingExpenseId = null;
+  document.getElementById('expense-modal-title').textContent = 'Nova Despesa';
+  document.getElementById('exp-data').value = '';
+  document.getElementById('exp-desc').value = '';
+  document.getElementById('exp-cat').value = 'Fornecedor';
+  document.getElementById('exp-valor').value = '';
+  document.getElementById('exp-status').value = 'PENDENTE';
+  document.getElementById('exp-obs').value = '';
+  document.getElementById('expense-modal').classList.add('open');
+}
+function editExpense(id){
+  const desp = getDespesasMonth();
+  const item = desp.find(e=>e.id===id);
+  if(!item) return;
+  editingExpenseId = id;
+  document.getElementById('expense-modal-title').textContent = 'Editar Despesa';
+  document.getElementById('exp-data').value = item.data || '';
+  document.getElementById('exp-desc').value = item.desc || '';
+  document.getElementById('exp-cat').value = item.cat || 'Fornecedor';
+  document.getElementById('exp-valor').value = item.valor || '';
+  document.getElementById('exp-status').value = item.status || 'PENDENTE';
+  document.getElementById('exp-obs').value = item.obs || '';
+  document.getElementById('expense-modal').classList.add('open');
+}
+function closeExpenseModal(){
+  document.getElementById('expense-modal').classList.remove('open');
+}
+function saveExpense(){
+  const desc = document.getElementById('exp-desc').value.trim();
+  if(!desc){
+    showToast('Digite uma descrição');
+    return;
+  }
+  const desp = getDespesasMonth();
+  const payload = {
+    data: document.getElementById('exp-data').value,
+    desc: desc,
+    cat: document.getElementById('exp-cat').value,
+    valor: document.getElementById('exp-valor').value,
+    status: document.getElementById('exp-status').value,
+    obs: document.getElementById('exp-obs').value
+  };
+
+  if(editingExpenseId){
+    const item = desp.find(e=>e.id===editingExpenseId);
+    Object.assign(item, payload);
+  } else {
+    payload.id = 'e_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+    desp.push(payload);
+  }
+
+  saveData();
+  closeExpenseModal();
+  renderSummary();
+  renderDespesas();
+  showToast('Despesa salva!');
+}
+function deleteExpense(id){
+  if(!confirm('Excluir esta despesa?')) return;
+  const desp = getDespesasMonth();
+  const idx = desp.findIndex(e=>e.id===id);
+  if(idx>-1){
+    desp.splice(idx,1);
+    saveData();
+    renderSummary();
+    renderDespesas();
+    showToast('Despesa excluída');
+  }
+}
+
+/* ============================================================
+   TOAST
+============================================================ */
+let toastTimeout = null;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ============================================================
+   SESSION CHECK
+============================================================ */
+if(sessionStorage.getItem('vizzoni_auth')==='1'){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  initApp();
+}
+</script>
+</body>
+</html>
