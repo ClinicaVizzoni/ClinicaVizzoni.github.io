@@ -1055,7 +1055,7 @@ function renderDespesas(){
   const sorted = [...desp].sort((a,b)=>{
     if(!a.data) return 1;
     if(!b.data) return -1;
-    return a.data.localeCompare(b.data);
+    return b.data.localeCompare(a.data);
   });
 
   // Totais por categoria (apenas pagas)
