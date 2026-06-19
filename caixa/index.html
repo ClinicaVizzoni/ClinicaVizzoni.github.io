@@ -544,7 +544,7 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
     </div>
     <div class="field">
       <label class="field-label">Valor (R$)</label>
-      <input type="number" step="0.01" class="field-input" id="exp-valor" placeholder="0,00">
+      <input type="text" inputmode="numeric" class="field-input" id="exp-valor" placeholder="0,00" oninput="maskCurrencyInput(this)">
     </div>
     <div class="field">
       <label class="field-label">Status</label>
@@ -848,6 +848,34 @@ function fmtBRL(v){
   return 'R$ ' + (v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 
+/* ============================================================
+   MASCARA DE MOEDA — digita so numeros, formata como dinheiro
+============================================================ */
+function maskCurrencyInput(input){
+  let digits = input.value.replace(/\D/g,'');
+  if(digits===''){
+    input.value = '';
+    return;
+  }
+  digits = digits.replace(/^0+(?=\d)/,'');
+  while(digits.length < 3) digits = '0' + digits;
+  const cents = digits.slice(-2);
+  const intPart = digits.slice(0,-2);
+  const intFormatted = parseInt(intPart,10).toLocaleString('pt-BR');
+  input.value = intFormatted + ',' + cents;
+}
+function unmaskCurrency(str){
+  if(!str) return '';
+  const digits = str.replace(/\D/g,'');
+  if(digits==='') return '';
+  return (parseInt(digits,10)/100).toString();
+}
+function formatCentsDisplay(value){
+  const num = parseFloat(value);
+  if(isNaN(num)) return '';
+  return num.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
 function renderSummary(){
   const totalRec = calcTotalReceitas();
   const totalDesp = calcTotalDespesasPagas();
@@ -915,19 +943,19 @@ function renderReceitas(){
         <div class="day-inputs">
           <div class="day-input-wrap">
             <label class="day-input-label">Dinheiro</label>
-            <input type="number" inputmode="decimal" class="day-input" value="${dayData.dinheiro||''}" placeholder="0,00" onchange="updateReceita(${d},'dinheiro',this.value)">
+            <input type="text" inputmode="numeric" class="day-input" value="${dayData.dinheiro?formatCentsDisplay(dayData.dinheiro):''}" placeholder="0,00" oninput="maskCurrencyInput(this)" onchange="updateReceita(${d},'dinheiro',unmaskCurrency(this.value))">
           </div>
           <div class="day-input-wrap">
             <label class="day-input-label">Pix</label>
-            <input type="number" inputmode="decimal" class="day-input" value="${dayData.pix||''}" placeholder="0,00" onchange="updateReceita(${d},'pix',this.value)">
+            <input type="text" inputmode="numeric" class="day-input" value="${dayData.pix?formatCentsDisplay(dayData.pix):''}" placeholder="0,00" oninput="maskCurrencyInput(this)" onchange="updateReceita(${d},'pix',unmaskCurrency(this.value))">
           </div>
           <div class="day-input-wrap">
             <label class="day-input-label">Débito</label>
-            <input type="number" inputmode="decimal" class="day-input" value="${dayData.debito||''}" placeholder="0,00" onchange="updateReceita(${d},'debito',this.value)">
+            <input type="text" inputmode="numeric" class="day-input" value="${dayData.debito?formatCentsDisplay(dayData.debito):''}" placeholder="0,00" oninput="maskCurrencyInput(this)" onchange="updateReceita(${d},'debito',unmaskCurrency(this.value))">
           </div>
           <div class="day-input-wrap">
             <label class="day-input-label">Crédito</label>
-            <input type="number" inputmode="decimal" class="day-input" value="${dayData.credito||''}" placeholder="0,00" onchange="updateReceita(${d},'credito',this.value)">
+            <input type="text" inputmode="numeric" class="day-input" value="${dayData.credito?formatCentsDisplay(dayData.credito):''}" placeholder="0,00" oninput="maskCurrencyInput(this)" onchange="updateReceita(${d},'credito',unmaskCurrency(this.value))">
           </div>
         </div>
       </div>
@@ -1080,7 +1108,7 @@ function editExpense(id){
   document.getElementById('exp-data').value = item.data || '';
   document.getElementById('exp-desc').value = item.desc || '';
   document.getElementById('exp-cat').value = item.cat || 'Fornecedor';
-  document.getElementById('exp-valor').value = item.valor || '';
+  document.getElementById('exp-valor').value = item.valor ? formatCentsDisplay(item.valor) : '';
   document.getElementById('exp-status').value = item.status || 'PENDENTE';
   document.getElementById('exp-obs').value = item.obs || '';
   document.getElementById('expense-modal').classList.add('open');
@@ -1099,7 +1127,7 @@ function saveExpense(){
     data: document.getElementById('exp-data').value,
     desc: desc,
     cat: document.getElementById('exp-cat').value,
-    valor: document.getElementById('exp-valor').value,
+    valor: unmaskCurrency(document.getElementById('exp-valor').value),
     status: document.getElementById('exp-status').value,
     obs: document.getElementById('exp-obs').value
   };
