@@ -220,6 +220,18 @@ body{
 .pm-name{font-size:14.5px;font-weight:600;}
 .pm-value{font-size:15px;font-weight:700;color:var(--green);}
 
+.cat-row{
+  display:flex;justify-content:space-between;align-items:center;
+  background:var(--paper);
+  border-radius:12px;
+  padding:13px 16px;
+  margin-bottom:7px;
+  box-shadow:0 1px 2px rgba(0,0,0,0.04);
+  border-left:3px solid var(--wine-light);
+}
+.cat-name{font-size:13.5px;font-weight:600;color:var(--ink);}
+.cat-value{font-size:14.5px;font-weight:700;color:var(--red);}
+
 /* Day rows (receitas) */
 .day-card{
   background:var(--paper);
@@ -512,15 +524,20 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
       <label class="field-label">Categoria</label>
       <select class="field-input" id="exp-cat">
         <option value="Fornecedor">Fornecedor</option>
-        <option value="Fixo">Fixo</option>
+        <option value="Aluguel">Aluguel</option>
+        <option value="Agua Luz Internet">Água / Luz / Internet</option>
         <option value="Folha de Pagamento">Folha de Pagamento</option>
-        <option value="Pro Labore">Pro Labore</option>
-        <option value="Impostos">Impostos</option>
-        <option value="Honorarios">Honorários</option>
+        <option value="Pro Labore">Pró-labore</option>
+        <option value="Impostos">Impostos e Taxas</option>
+        <option value="Honorarios Dentistas">Honorários (Dentistas)</option>
+        <option value="Honorarios Contador">Honorários (Contador)</option>
+        <option value="Laboratorio Protese">Laboratório / Prótese</option>
+        <option value="Manutencao">Manutenção de Equipamentos</option>
+        <option value="Marketing">Marketing e Publicidade</option>
+        <option value="Lanche Cafe">Lanche / Café</option>
         <option value="Cartao">Cartão</option>
-        <option value="Servicos">Serviços</option>
-        <option value="Manutencao">Manutenção</option>
-        <option value="Compras">Compras</option>
+        <option value="Compras">Compras Online</option>
+        <option value="Servicos">Serviços Terceirizados</option>
         <option value="Outros">Outros</option>
       </select>
     </div>
@@ -927,6 +944,28 @@ function updateReceita(day, field, value){
   renderReceitas();
 }
 
+const CATEGORY_LABELS = {
+  'Fornecedor':'Fornecedor',
+  'Aluguel':'Aluguel',
+  'Agua Luz Internet':'Água / Luz / Internet',
+  'Folha de Pagamento':'Folha de Pagamento',
+  'Pro Labore':'Pró-labore',
+  'Impostos':'Impostos e Taxas',
+  'Honorarios Dentistas':'Honorários (Dentistas)',
+  'Honorarios Contador':'Honorários (Contador)',
+  'Laboratorio Protese':'Laboratório / Prótese',
+  'Manutencao':'Manutenção de Equipamentos',
+  'Marketing':'Marketing e Publicidade',
+  'Lanche Cafe':'Lanche / Café',
+  'Cartao':'Cartão',
+  'Compras':'Compras Online',
+  'Servicos':'Serviços Terceirizados',
+  'Outros':'Outros'
+};
+function catLabel(cat){
+  return CATEGORY_LABELS[cat] || cat || 'Outros';
+}
+
 function renderDespesas(){
   const desp = getDespesasMonth();
   const sorted = [...desp].sort((a,b)=>{
@@ -934,6 +973,28 @@ function renderDespesas(){
     if(!b.data) return -1;
     return a.data.localeCompare(b.data);
   });
+
+  // Totais por categoria (apenas pagas)
+  const catTotals = {};
+  desp.forEach(e=>{
+    if(e.status==='PAGO'){
+      const c = e.cat || 'Outros';
+      catTotals[c] = (catTotals[c]||0) + (parseFloat(e.valor)||0);
+    }
+  });
+  const catEntries = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
+
+  let catHtml = '';
+  if(catEntries.length > 0){
+    catHtml = `<div class="section-block-title">Total por categoria (pagas)</div>`;
+    catEntries.forEach(([cat,total])=>{
+      catHtml += `
+        <div class="cat-row">
+          <div class="cat-name">${escapeHtml(catLabel(cat))}</div>
+          <div class="cat-value">${fmtBRL(total)}</div>
+        </div>`;
+    });
+  }
 
   if(sorted.length===0){
     document.getElementById('expenses-list').innerHTML = `
@@ -945,7 +1006,7 @@ function renderDespesas(){
     return;
   }
 
-  let html = '';
+  let html = catHtml + `<div class="section-block-title">Lançamentos</div>`;
   sorted.forEach(e=>{
     const dateFmt = e.data ? formatDateBR(e.data) : '—';
     html += `
@@ -955,7 +1016,7 @@ function renderDespesas(){
           <div class="exp-value">${e.valor ? fmtBRL(parseFloat(e.valor)) : '—'}</div>
         </div>
         <div class="exp-meta">
-          <span class="exp-tag">${escapeHtml(e.cat||'Outros')}</span>
+          <span class="exp-tag">${escapeHtml(catLabel(e.cat))}</span>
           <span class="exp-date">${dateFmt}</span>
         </div>
         <div class="status-toggle">
