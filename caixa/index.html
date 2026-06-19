@@ -120,20 +120,17 @@ body{
   padding:7px 12px;font-size:12.5px;font-weight:600;
 }
 .year-switch{
-  display:flex;align-items:center;gap:2px;
+  display:flex;align-items:center;gap:5px;
   background:rgba(255,255,255,0.12);
   border:1px solid rgba(255,255,255,0.22);
   border-radius:8px;
-  padding:4px 2px;
-}
-.year-arrow{
-  background:none;border:none;color:#fff;
-  font-size:18px;font-weight:700;
-  padding:2px 9px;line-height:1;
+  padding:8px 12px;
 }
 .year-value{
-  font-size:13px;font-weight:700;color:#fff;
-  padding:0 4px;min-width:36px;text-align:center;
+  font-size:13.5px;font-weight:700;color:#fff;
+}
+.year-caret{
+  font-size:10px;color:rgba(255,255,255,0.7);
 }
 
 /* Month selector strip */
@@ -351,6 +348,20 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
 .modal-btn.primary{background:var(--wine);color:#fff;}
 .modal-btn.secondary{background:#F0E5E8;color:var(--wine);}
 
+.year-option{
+  padding:15px 16px;
+  border-radius:12px;
+  font-size:16px;font-weight:700;
+  background:var(--paper);
+  margin-bottom:8px;
+  text-align:center;
+  border:1.5px solid var(--line);
+}
+.year-option.active{
+  background:var(--wine);
+  color:#fff;
+  border-color:var(--wine);
+}
 .empty-state{text-align:center;padding:40px 20px;color:var(--muted);}
 .empty-state-icon{font-size:38px;margin-bottom:10px;opacity:0.4;}
 .empty-state-text{font-size:14px;}
@@ -414,10 +425,9 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
         <div class="topbar-sub" id="month-label">Junho 2026</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
-        <div class="year-switch">
-          <button class="year-arrow" onclick="changeYear(-1)">‹</button>
+        <div class="year-switch" onclick="openYearModal()">
           <span class="year-value" id="year-value">2026</span>
-          <button class="year-arrow" onclick="changeYear(1)">›</button>
+          <span class="year-caret">▾</span>
         </div>
         <button class="topbar-logout" onclick="logout()">Sair</button>
       </div>
@@ -533,6 +543,15 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- ============ MODAL: SELECIONAR ANO ============ -->
+<div class="modal-overlay" id="year-modal">
+  <div class="modal-sheet" style="max-height:60vh;">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Selecionar ano</div>
+    <div id="year-options"></div>
+  </div>
+</div>
 
 <script>
 /* ============================================================
@@ -657,12 +676,23 @@ async function initApp(){
   renderAll();
 }
 
-function changeYear(delta){
-  currentYear += delta;
-  if(currentYear < 2024) currentYear = 2024;
-  if(currentYear > 2099) currentYear = 2099;
+const AVAILABLE_YEARS = [2026, 2027, 2028, 2029, 2030];
+
+function openYearModal(){
+  const wrap = document.getElementById('year-options');
+  wrap.innerHTML = AVAILABLE_YEARS.map(y =>
+    `<div class="year-option ${y===currentYear?'active':''}" onclick="selectYear(${y})">${y}</div>`
+  ).join('');
+  document.getElementById('year-modal').classList.add('open');
+}
+function closeYearModal(){
+  document.getElementById('year-modal').classList.remove('open');
+}
+function selectYear(year){
+  currentYear = year;
   MONTHS = getMonthsForYear(currentYear);
   document.getElementById('year-value').textContent = currentYear;
+  closeYearModal();
   buildMonthStrip();
   const m = MONTHS.find(x=>x.key===currentMonth);
   document.getElementById('month-label').textContent = m.label + ' ' + currentYear;
