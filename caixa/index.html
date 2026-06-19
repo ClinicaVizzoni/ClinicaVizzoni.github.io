@@ -232,6 +232,19 @@ body{
 .cat-name{font-size:13.5px;font-weight:600;color:var(--ink);}
 .cat-value{font-size:14.5px;font-weight:700;color:var(--red);}
 
+.day-group-header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 4px 6px;
+  margin-top:6px;
+}
+.day-group-date{
+  font-size:13px;font-weight:800;color:var(--wine);
+  text-transform:uppercase;letter-spacing:0.3px;
+}
+.day-group-total{
+  font-size:13.5px;font-weight:700;color:var(--red);
+}
+
 /* Day rows (receitas) */
 .day-card{
   background:var(--paper);
@@ -1067,27 +1080,6 @@ function renderDespesas(){
     });
   }
 
-  // Totais por dia (apenas pagas, com data preenchida)
-  const dayTotals = {};
-  desp.forEach(e=>{
-    if(e.status==='PAGO' && e.data){
-      dayTotals[e.data] = (dayTotals[e.data]||0) + (parseFloat(e.valor)||0);
-    }
-  });
-  const dayEntries = Object.entries(dayTotals).sort((a,b)=>a[0].localeCompare(b[0]));
-
-  let dayHtml = '';
-  if(dayEntries.length > 0){
-    dayHtml = `<div class="section-block-title">Total por dia (pagas)</div>`;
-    dayEntries.forEach(([dateIso,total])=>{
-      dayHtml += `
-        <div class="cat-row">
-          <div class="cat-name">${formatDateBR(dateIso)}</div>
-          <div class="cat-value">${fmtBRL(total)}</div>
-        </div>`;
-    });
-  }
-
   if(sorted.length===0){
     document.getElementById('expenses-list').innerHTML = `
       <div class="empty-state">
@@ -1098,9 +1090,38 @@ function renderDespesas(){
     return;
   }
 
-  let html = catHtml + dayHtml + `<div class="section-block-title">Lançamentos</div>`;
+  // Totais por dia (apenas pagas, com data preenchida) — usado nos cabecalhos de grupo
+  const dayTotalsMap = {};
+  desp.forEach(e=>{
+    if(e.status==='PAGO' && e.data){
+      dayTotalsMap[e.data] = (dayTotalsMap[e.data]||0) + (parseFloat(e.valor)||0);
+    }
+  });
+
+  let html = catHtml + `<div class="section-block-title">Lançamentos</div>`;
+  let lastDateGroup = null;
+
   sorted.forEach(e=>{
     const dateFmt = e.data ? formatDateBR(e.data) : '—';
+    const groupKey = e.data || 'sem-data';
+
+    if(groupKey !== lastDateGroup){
+      lastDateGroup = groupKey;
+      if(e.data){
+        const dayTotal = dayTotalsMap[e.data] || 0;
+        html += `
+          <div class="day-group-header">
+            <span class="day-group-date">${dateFmt}</span>
+            <span class="day-group-total">${dayTotal>0?fmtBRL(dayTotal):'—'}</span>
+          </div>`;
+      } else {
+        html += `
+          <div class="day-group-header">
+            <span class="day-group-date">Sem data</span>
+          </div>`;
+      }
+    }
+
     html += `
       <div class="exp-card ${e.status==='PAGO'?'paid':''}">
         <div class="exp-top">
@@ -1109,7 +1130,6 @@ function renderDespesas(){
         </div>
         <div class="exp-meta">
           <span class="exp-tag">${escapeHtml(catLabel(e.cat))}</span>
-          <span class="exp-date">${dateFmt}</span>
         </div>
         <div class="status-toggle">
           <div class="status-btn ${e.status==='PENDENTE'?'active pendente':''}" onclick="toggleStatus('${e.id}','PENDENTE')">Pendente</div>
