@@ -866,9 +866,12 @@ function maskCurrencyInput(input){
 }
 function unmaskCurrency(str){
   if(!str) return '';
-  const digits = str.replace(/\D/g,'');
-  if(digits==='') return '';
-  return (parseInt(digits,10)/100).toString();
+  // Remove tudo que nao for digito, mas o valor exibido ja esta formatado
+  // como "1.234,56" - removemos pontos de milhar e trocamos virgula por ponto
+  const cleaned = str.replace(/\./g,'').replace(',', '.');
+  const num = parseFloat(cleaned);
+  if(isNaN(num)) return '';
+  return num.toString();
 }
 function formatCentsDisplay(value){
   const num = parseFloat(value);
@@ -938,24 +941,24 @@ function renderReceitas(){
             <span class="day-week"> · ${wd}</span>
             ${isHoliday?`<div class="holiday-tag">🎉 ${escapeHtml(holidayName)}</div>`:''}
           </div>
-          <div class="day-total">${dayTotal>0?fmtBRL(dayTotal):''}</div>
+          <div class="day-total" id="day-total-${d}">${dayTotal>0?fmtBRL(dayTotal):''}</div>
         </div>
         <div class="day-inputs">
           <div class="day-input-wrap">
             <label class="day-input-label">Dinheiro</label>
-            <input type="text" inputmode="numeric" class="day-input" value="${dayData.dinheiro?formatCentsDisplay(dayData.dinheiro):''}" placeholder="0,00" oninput="maskCurrencyInput(this)" onchange="updateReceita(${d},'dinheiro',unmaskCurrency(this.value))">
+            <input type="text" inputmode="numeric" class="day-input" value="${dayData.dinheiro?formatCentsDisplay(dayData.dinheiro):''}" placeholder="0,00" oninput="maskCurrencyInput(this); updateReceitaLive(${d},'dinheiro',this.value)">
           </div>
           <div class="day-input-wrap">
             <label class="day-input-label">Pix</label>
-            <input type="text" inputmode="numeric" class="day-input" value="${dayData.pix?formatCentsDisplay(dayData.pix):''}" placeholder="0,00" oninput="maskCurrencyInput(this)" onchange="updateReceita(${d},'pix',unmaskCurrency(this.value))">
+            <input type="text" inputmode="numeric" class="day-input" value="${dayData.pix?formatCentsDisplay(dayData.pix):''}" placeholder="0,00" oninput="maskCurrencyInput(this); updateReceitaLive(${d},'pix',this.value)">
           </div>
           <div class="day-input-wrap">
             <label class="day-input-label">Débito</label>
-            <input type="text" inputmode="numeric" class="day-input" value="${dayData.debito?formatCentsDisplay(dayData.debito):''}" placeholder="0,00" oninput="maskCurrencyInput(this)" onchange="updateReceita(${d},'debito',unmaskCurrency(this.value))">
+            <input type="text" inputmode="numeric" class="day-input" value="${dayData.debito?formatCentsDisplay(dayData.debito):''}" placeholder="0,00" oninput="maskCurrencyInput(this); updateReceitaLive(${d},'debito',this.value)">
           </div>
           <div class="day-input-wrap">
             <label class="day-input-label">Crédito</label>
-            <input type="text" inputmode="numeric" class="day-input" value="${dayData.credito?formatCentsDisplay(dayData.credito):''}" placeholder="0,00" oninput="maskCurrencyInput(this)" onchange="updateReceita(${d},'credito',unmaskCurrency(this.value))">
+            <input type="text" inputmode="numeric" class="day-input" value="${dayData.credito?formatCentsDisplay(dayData.credito):''}" placeholder="0,00" oninput="maskCurrencyInput(this); updateReceitaLive(${d},'credito',this.value)">
           </div>
         </div>
       </div>
@@ -971,6 +974,44 @@ function updateReceita(day, field, value){
   saveData();
   renderSummary();
   renderReceitas();
+}
+
+function updateReceitaLive(day, field, rawValue){
+  const rec = getReceitasMonth();
+  if(!rec[day]) rec[day] = {dinheiro:'',pix:'',debito:'',credito:''};
+  rec[day][field] = unmaskCurrency(rawValue);
+  saveData();
+  renderSummary();
+  updatePMSummary();
+  updateDayTotalDisplay(day);
+}
+
+function updateDayTotalDisplay(day){
+  const rec = getReceitasMonth();
+  const dayData = rec[day] || {};
+  const dayTotal = (parseFloat(dayData.dinheiro)||0)+(parseFloat(dayData.pix)||0)+(parseFloat(dayData.debito)||0)+(parseFloat(dayData.credito)||0);
+  const totalEl = document.getElementById('day-total-'+day);
+  if(totalEl) totalEl.textContent = dayTotal>0?fmtBRL(dayTotal):'';
+}
+
+function updatePMSummary(){
+  const rec = getReceitasMonth();
+  let totDinheiro=0, totPix=0, totDebito=0, totCredito=0;
+  Object.values(rec).forEach(d=>{
+    totDinheiro += parseFloat(d.dinheiro)||0;
+    totPix += parseFloat(d.pix)||0;
+    totDebito += parseFloat(d.debito)||0;
+    totCredito += parseFloat(d.credito)||0;
+  });
+  const pmEl = document.getElementById('pm-summary');
+  if(pmEl){
+    pmEl.innerHTML = `
+      <div class="pm-row"><div class="pm-left"><div class="pm-dot" style="background:#2E7D32"></div><div class="pm-name">Dinheiro</div></div><div class="pm-value">${fmtBRL(totDinheiro)}</div></div>
+      <div class="pm-row"><div class="pm-left"><div class="pm-dot" style="background:#1565C0"></div><div class="pm-name">Pix</div></div><div class="pm-value">${fmtBRL(totPix)}</div></div>
+      <div class="pm-row"><div class="pm-left"><div class="pm-dot" style="background:#6A1B9A"></div><div class="pm-name">Débito</div></div><div class="pm-value">${fmtBRL(totDebito)}</div></div>
+      <div class="pm-row"><div class="pm-left"><div class="pm-dot" style="background:#BF360C"></div><div class="pm-name">Crédito</div></div><div class="pm-value">${fmtBRL(totCredito)}</div></div>
+    `;
+  }
 }
 
 const CATEGORY_LABELS = {
