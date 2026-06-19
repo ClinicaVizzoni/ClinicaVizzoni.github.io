@@ -119,6 +119,22 @@ body{
   color:#fff;border-radius:8px;
   padding:7px 12px;font-size:12.5px;font-weight:600;
 }
+.year-switch{
+  display:flex;align-items:center;gap:2px;
+  background:rgba(255,255,255,0.12);
+  border:1px solid rgba(255,255,255,0.22);
+  border-radius:8px;
+  padding:4px 2px;
+}
+.year-arrow{
+  background:none;border:none;color:#fff;
+  font-size:18px;font-weight:700;
+  padding:2px 9px;line-height:1;
+}
+.year-value{
+  font-size:13px;font-weight:700;color:#fff;
+  padding:0 4px;min-width:36px;text-align:center;
+}
 
 /* Month selector strip */
 .month-strip{
@@ -397,7 +413,14 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
         <div class="topbar-title serif">Clínica Vizzoni</div>
         <div class="topbar-sub" id="month-label">Junho 2026</div>
       </div>
-      <button class="topbar-logout" onclick="logout()">Sair</button>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="year-switch">
+          <button class="year-arrow" onclick="changeYear(-1)">‹</button>
+          <span class="year-value" id="year-value">2026</span>
+          <button class="year-arrow" onclick="changeYear(1)">›</button>
+        </div>
+        <button class="topbar-logout" onclick="logout()">Sair</button>
+      </div>
     </div>
     <div class="month-strip" id="month-strip"></div>
   </div>
@@ -519,29 +542,48 @@ const JSONBIN_BIN_ID = '6a34c424da38895dfedb47c9';
 const JSONBIN_API_KEY = '$2a$10$Nz6iuJHQdnLFBavcEf6hbuX3qXN2cmaEJKY99Wax3q08EsrgD2O0W';
 const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
 
-const APP_PASSWORD = 'vizzoni2026';
+const APP_PASSWORD = 'Mi3030';
 
 /* ============================================================
    STATE
 ============================================================ */
-const MONTHS = [
-  {key:'jun', label:'Junho', num:6, days:30},
-  {key:'jul', label:'Julho', num:7, days:31},
-  {key:'ago', label:'Agosto', num:8, days:31},
-  {key:'set', label:'Setembro', num:9, days:30},
-  {key:'out', label:'Outubro', num:10, days:31},
-  {key:'nov', label:'Novembro', num:11, days:30},
-  {key:'dez', label:'Dezembro', num:12, days:31},
+const MONTH_DEFS = [
+  {key:'jan', label:'Janeiro', num:1},
+  {key:'fev', label:'Fevereiro', num:2},
+  {key:'mar', label:'Março', num:3},
+  {key:'abr', label:'Abril', num:4},
+  {key:'mai', label:'Maio', num:5},
+  {key:'jun', label:'Junho', num:6},
+  {key:'jul', label:'Julho', num:7},
+  {key:'ago', label:'Agosto', num:8},
+  {key:'set', label:'Setembro', num:9},
+  {key:'out', label:'Outubro', num:10},
+  {key:'nov', label:'Novembro', num:11},
+  {key:'dez', label:'Dezembro', num:12},
 ];
 const WEEKDAYS = ['DOM','SEG','TER','QUA','QUI','SEX','SAB'];
 
+function daysInMonth(year, monthNum){
+  return new Date(year, monthNum, 0).getDate();
+}
+function getMonthsForYear(year){
+  return MONTH_DEFS.map(m => ({...m, days: daysInMonth(year, m.num)}));
+}
+
+let currentYear = 2026;
+let MONTHS = getMonthsForYear(currentYear);
 let currentMonth = 'jun';
 let currentTab = 'receitas';
 let editingExpenseId = null;
 
 let DATA = { receitas: {}, despesas: {} };
-// receitas[monthKey][day] = {dinheiro,pix,debito,credito}
-// despesas[monthKey] = [{id,data,desc,cat,valor,status,obs}]
+// receitas[yearMonthKey][day] = {dinheiro,pix,debito,credito}
+// despesas[yearMonthKey] = [{id,data,desc,cat,valor,status,obs}]
+// yearMonthKey example: "2026-jun"
+
+function yearMonthKey(){
+  return currentYear + '-' + currentMonth;
+}
 
 /* ============================================================
    AUTH
@@ -615,6 +657,18 @@ async function initApp(){
   renderAll();
 }
 
+function changeYear(delta){
+  currentYear += delta;
+  if(currentYear < 2024) currentYear = 2024;
+  if(currentYear > 2099) currentYear = 2099;
+  MONTHS = getMonthsForYear(currentYear);
+  document.getElementById('year-value').textContent = currentYear;
+  buildMonthStrip();
+  const m = MONTHS.find(x=>x.key===currentMonth);
+  document.getElementById('month-label').textContent = m.label + ' ' + currentYear;
+  renderAll();
+}
+
 function buildMonthStrip(){
   const strip = document.getElementById('month-strip');
   strip.innerHTML = MONTHS.map(m=>
@@ -628,7 +682,7 @@ function selectMonth(key){
     c.classList.toggle('active', c.dataset.month===key);
   });
   const m = MONTHS.find(x=>x.key===key);
-  document.getElementById('month-label').textContent = m.label + ' 2026';
+  document.getElementById('month-label').textContent = m.label + ' ' + currentYear;
   renderAll();
 }
 
@@ -654,12 +708,14 @@ function renderAll(){
 function getMonthInfo(){ return MONTHS.find(m=>m.key===currentMonth); }
 
 function getReceitasMonth(){
-  if(!DATA.receitas[currentMonth]) DATA.receitas[currentMonth] = {};
-  return DATA.receitas[currentMonth];
+  const k = yearMonthKey();
+  if(!DATA.receitas[k]) DATA.receitas[k] = {};
+  return DATA.receitas[k];
 }
 function getDespesasMonth(){
-  if(!DATA.despesas[currentMonth]) DATA.despesas[currentMonth] = [];
-  return DATA.despesas[currentMonth];
+  const k = yearMonthKey();
+  if(!DATA.despesas[k]) DATA.despesas[k] = [];
+  return DATA.despesas[k];
 }
 
 function calcTotalReceitas(){
@@ -725,7 +781,7 @@ function renderReceitas(){
   // Day-by-day list
   let daysHtml = '';
   for(let d=1; d<=m.days; d++){
-    const date = new Date(2026, m.num-1, d);
+    const date = new Date(currentYear, m.num-1, d);
     const wd = WEEKDAYS[date.getDay()];
     const isWeekend = date.getDay()===0 || date.getDay()===6;
     const dayData = rec[d] || {dinheiro:'',pix:'',debito:'',credito:''};
