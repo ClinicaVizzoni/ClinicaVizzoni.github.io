@@ -10,6 +10,8 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Vizzoni — Fluxo de Caixa</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <style>
 :root{
   --wine:#7A1530;
@@ -231,6 +233,27 @@ body{
 }
 .cat-name{font-size:13.5px;font-weight:600;color:var(--ink);}
 .cat-value{font-size:14.5px;font-weight:700;color:var(--red);}
+.cat-arrow{font-size:13px;color:var(--muted);}
+.cat-row{cursor:pointer;}
+.cat-row:active{opacity:0.7;}
+.cat-expand{
+  background:#FDF8F9;
+  border-radius:0 0 10px 10px;
+  margin-top:-8px;
+  margin-bottom:8px;
+  padding:8px 12px;
+  border:1px solid var(--line);
+  border-top:none;
+}
+.cat-item{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:7px 0;
+  border-bottom:1px solid var(--line);
+  font-size:13px;
+}
+.cat-item:last-child{border-bottom:none;}
+.cat-item-desc{color:var(--ink);font-weight:500;flex:1;}
+.cat-item-val{color:var(--red);font-weight:700;white-space:nowrap;margin-left:8px;}
 
 .day-group-header{
   display:flex;justify-content:space-between;align-items:center;
@@ -319,6 +342,15 @@ body{
   background:#F3ECEE;color:var(--muted);
 }
 .exp-date{font-size:12px;color:var(--muted);}
+.exp-obs{
+  font-size:12.5px;color:var(--muted);
+  font-style:italic;
+  margin-top:6px;
+  padding:7px 10px;
+  background:#F8F4F5;
+  border-radius:8px;
+  border-left:3px solid var(--line);
+}
 .status-toggle{
   display:flex;border-radius:8px;overflow:hidden;border:1px solid var(--line);margin-top:10px;
 }
@@ -443,6 +475,19 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
   text-transform:uppercase;letter-spacing:0.5px;
   margin:20px 0 10px;
 }
+.filter-bar{
+  display:flex;gap:8px;margin:14px 0 4px;
+}
+.filter-input{
+  flex:1;border:1.5px solid var(--line);border-radius:10px;
+  padding:11px 14px;font-size:14.5px;background:#fff;color:var(--ink);
+}
+.filter-input:focus{outline:none;border-color:var(--wine-light);}
+.filter-select{
+  flex:1;border:1.5px solid var(--line);border-radius:10px;
+  padding:11px 10px;font-size:13.5px;background:#fff;color:var(--ink);
+  appearance:none;
+}
 </style>
 </head>
 <body>
@@ -514,6 +559,13 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
 
     <!-- RECEITAS VIEW -->
     <div id="view-receitas">
+      <!-- Filtro por dia -->
+      <div class="filter-bar">
+        <select class="filter-select" id="day-filter-rec" onchange="applyDayFilter()">
+          <option value="">Todos os dias</option>
+        </select>
+      </div>
+
       <div class="section-block-title">Por forma de pagamento</div>
       <div id="pm-summary"></div>
 
@@ -523,6 +575,13 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
 
     <!-- DESPESAS VIEW -->
     <div id="view-despesas" style="display:none;">
+      <!-- Busca + filtro por dia -->
+      <div class="filter-bar">
+        <input type="text" class="filter-input" id="search-desp" placeholder="Buscar despesa..." oninput="renderDespesas()">
+        <select class="filter-select" id="day-filter-desp" onchange="renderDespesas()">
+          <option value="">Todos os dias</option>
+        </select>
+      </div>
       <div id="expenses-list"></div>
     </div>
 
@@ -558,7 +617,7 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
       <select class="field-input" id="exp-cat">
         <option value="Fornecedor">Fornecedor</option>
         <option value="Aluguel">Aluguel</option>
-        <option value="Agua Luz Internet">Água / Luz / Internet</option>
+        <option value="Agua Luz Internet">Água / Luz / Internet / Telefone</option>
         <option value="Folha de Pagamento">Folha de Pagamento</option>
         <option value="Pro Labore">Pró-labore</option>
         <option value="Impostos">Impostos e Taxas</option>
@@ -619,11 +678,22 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
 
 <script>
 /* ============================================================
-   CONFIG — JSONBin
+   FIREBASE CONFIG
 ============================================================ */
-const JSONBIN_BIN_ID = '6a34c424da38895dfedb47c9';
-const JSONBIN_API_KEY = '$2a$10$Nz6iuJHQdnLFBavcEf6hbuX3qXN2cmaEJKY99Wax3q08EsrgD2O0W';
-const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
+const firebaseConfig = {
+  apiKey: "AIzaSyC_F-oj77W8FrM46q41KAP13fMPqnMSnek",
+  authDomain: "vizzoni-caixa.firebaseapp.com",
+  projectId: "vizzoni-caixa",
+  storageBucket: "vizzoni-caixa.firebasestorage.app",
+  messagingSenderId: "895901273389",
+  appId: "1:895901273389:web:6ee78c0bc63fc0b4f8c5a3"
+};
+let db = null;
+function initFirebase(){
+  if(typeof firebase === 'undefined') return;
+  if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+}
 
 const APP_PASSWORD = 'Mi3030';
 
@@ -659,7 +729,7 @@ let currentMonth = 'jun';
 let currentTab = 'receitas';
 let editingExpenseId = null;
 
-let DATA = { receitas: {}, despesas: {} };
+let DATA = {"receitas":{"2026-jun":{"1":{"dinheiro":"955","pix":"3091","debito":"396.44","credito":"1928.53"},"2":{"dinheiro":"1200","pix":"1154","debito":"","credito":"819.06"},"3":{"dinheiro":"1100","pix":"1340","debito":"69.66","credito":"2623.33"},"5":{"dinheiro":"","pix":"","debito":"","credito":"385.69"},"8":{"dinheiro":"2696","pix":"4987","debito":"","credito":""},"9":{"dinheiro":"1127","pix":"3050","debito":"148.66","credito":"240.9"},"10":{"dinheiro":"625","pix":"1325","debito":"","credito":"481.8"},"11":{"dinheiro":"1950","pix":"1668","debito":"","credito":"915.42"},"12":{"dinheiro":"319","pix":"3452","debito":"148.66","credito":"991.1"},"15":{"dinheiro":"521","pix":"698","debito":"","credito":""},"16":{"dinheiro":"1090","pix":"1400","debito":"","credito":"216.81"},"17":{"dinheiro":"450","pix":"550","debito":"","credito":""},"18":{"dinheiro":"","pix":"3024","debito":"495.55","credito":"1241.11"},"19":{"dinheiro":"300","pix":"","debito":"","credito":"2213.27"},"20":{"dinheiro":"0","pix":"1045","debito":"","credito":""},"22":{"dinheiro":"1350","pix":"3090","debito":"0","credito":"241.06"}}},"despesas":{"2026-jun":[{"data":"2026-06-19","desc":"Dental","cat":"Fornecedor","valor":"287.46","status":"PAGO","obs":"","id":"e_1781986769353_en40yw"},{"data":"2026-06-01","desc":"DR. HEITOR GANIER","cat":"Honorarios Dentistas","valor":"3960","status":"PAGO","obs":"","id":"e_1782225847027_us0oys"},{"data":"2026-06-02","desc":"IPTU","cat":"Impostos","valor":"121.2","status":"PAGO","obs":"","id":"e_1782225891612_atpij1"},{"data":"2026-06-01","desc":"MATHEUS MARKETING","cat":"Marketing","valor":"400","status":"PAGO","obs":"","id":"e_1782225930859_0xnmuu"},{"data":"2026-06-01","desc":"TARIFA","cat":"Despesa Bancaria","valor":"30.85","status":"PAGO","obs":"","id":"e_1782225982034_v1jeic"},{"data":"2026-06-02","desc":"CRO-RJ","cat":"CRO Anuidade","valor":"230.75","status":"PAGO","obs":"","id":"e_1782226035479_f9kf1a"},{"data":"2026-06-02","desc":"UNIFORME","cat":"Uniforme","valor":"135","status":"PAGO","obs":"","id":"e_1782226063254_y179se"},{"data":"2026-06-02","desc":"GASE","cat":"Fornecedor","valor":"165","status":"PAGO","obs":"","id":"e_1782226152247_ee5ad8"},{"data":"2026-06-03","desc":"DENTAL CREMER","cat":"Fornecedor","valor":"958.01","status":"PAGO","obs":"","id":"e_1782226195591_m58ls3"},{"data":"2026-06-03","desc":"AT ODONTOLOGIA (ROBERTO)","cat":"Manutencao","valor":"300","status":"PAGO","obs":"","id":"e_1782226254408_1e8gva"},{"data":"2026-06-03","desc":"DR. MARCELO","cat":"Honorarios Dentistas","valor":"1200","status":"PAGO","obs":"","id":"e_1782226449508_pdm4qg"},{"data":"2026-06-04","desc":"DENTAL CREMER","cat":"Fornecedor","valor":"216.38","status":"PAGO","obs":"","id":"e_1782226540108_uipjel"},{"data":"2026-06-03","desc":"FUNCIONÁRIA DUDA","cat":"Folha de Pagamento","valor":"1748.46","status":"PAGO","obs":"","id":"e_1782227516084_9w50kl"},{"data":"2026-06-03","desc":"FUNCIONÁRIA (RAISSA)","cat":"Folha de Pagamento","valor":"1862","status":"PAGO","obs":"","id":"e_1782227568453_tcvrgp"},{"data":"2026-06-05","desc":"FINANCIAMENTO CARRO","cat":"Emprestimo Financiamento","valor":"3799.66","status":"PAGO","obs":"","id":"e_1782227636065_7i1l0i"},{"data":"2026-06-10","desc":"WILLI","cat":"Fornecedor","valor":"600","status":"PAGO","obs":"","id":"e_1782227670621_2wrark"},{"data":"2026-06-05","desc":"GESSO BANHEIRO","cat":"Servicos","valor":"1200","status":"PENDENTE","obs":"","id":"e_1782227831885_ek8olr"},{"data":"2026-06-09","desc":"ALDACIR","cat":"Emprestimo Financiamento","valor":"1500","status":"PAGO","obs":"","id":"e_1782227884577_e6g6bs"},{"data":"2026-06-06","desc":"PAGA LEVE ALIEXPRESS","cat":"Compras Online","valor":"69.43","status":"PAGO","obs":"","id":"e_1782227933455_74hru9"},{"data":"2026-06-07","desc":"SHOPEE","cat":"Compras Online","valor":"276.13","status":"PAGO","obs":"","id":"e_1782228006770_mhugxu"},{"data":"2026-06-10","desc":"DENTAL CREMER","cat":"Fornecedor","valor":"326.06","status":"PAGO","obs":"","id":"e_1782228042096_cyb2s1"},{"data":"2026-06-08","desc":"MAYCON PROTÉTICO","cat":"Laboratorio Protese","valor":"220","status":"PAGO","obs":"","id":"e_1782228082140_4qwspa"},{"data":"2026-06-09","desc":"EMPRÉSTIMO BB PF","cat":"Emprestimo Financiamento","valor":"400","status":"PAGO","obs":"","id":"e_1782228114394_kgt4t0"},{"data":"2026-06-09","desc":"DEVOLUÇÃO MARCELLE","cat":"Devolucao","valor":"200","status":"PAGO","obs":"","id":"e_1782228176252_pprxax"},{"data":"2026-06-10","desc":"EMPRÉSTIMO ZÉ MARIA BB","cat":"Emprestimo Financiamento","valor":"1000","status":"PAGO","obs":"","id":"e_1782228260101_t55nd3"},{"data":"2026-06-10","desc":"ALUGUEL","cat":"Aluguel","valor":"2400","status":"PAGO","obs":"","id":"e_1782228299674_d9eg5c"},{"data":"2026-06-10","desc":"LANCHE","cat":"Lanche Cafe","valor":"50.88","status":"PAGO","obs":"","id":"e_1782228328395_5d89z8"},{"data":"2026-06-10","desc":"TARIFA BB","cat":"Despesa Bancaria","valor":"155","status":"PAGO","obs":"","id":"e_1782228358164_hfsjna"},{"data":"2026-06-10","desc":"PREFEITURA","cat":"Impostos","valor":"43.61","status":"PAGO","obs":"","id":"e_1782228390847_dbkw03"},{"data":"2026-06-11","desc":"CARTÃO SICOOB","cat":"Fatura Cartao","valor":"4735.75","status":"PAGO","obs":"","id":"e_1782228434119_8b95t5"},{"data":"2026-06-11","desc":"BOTOX (MICHELLE)","cat":"Fornecedor","valor":"1229.08","status":"PAGO","obs":"","id":"e_1782228484535_pigys8"},{"data":"2026-06-12","desc":"DEVOLUÇÃO DRA. ROSANE","cat":"Devolucao","valor":"2000","status":"PAGO","obs":"","id":"e_1782228526473_d6difo"},{"data":"2026-06-12","desc":"DENTISTA ORGANIZADO","cat":"Software Assinatura","valor":"304.99","status":"PAGO","obs":"","id":"e_1782228564385_gzs6wc"},{"data":"2026-06-12","desc":"VALE FABI (CLIMAGEM)","cat":"Vale Adiantamento","valor":"250","status":"PAGO","obs":"","id":"e_1782228631172_u9yi9y"},{"data":"2026-06-12","desc":"SHOPEE","cat":"Compras Online","valor":"161.96","status":"PAGO","obs":"","id":"e_1782228700683_8f60z6"},{"data":"2026-06-12","desc":"VALE DRA. SHIRLE (INGRESSO)","cat":"Vale Adiantamento","valor":"198","status":"PAGO","obs":"","id":"e_1782228762761_ji9cl0"},{"data":"2026-06-15","desc":"DENTAL CREMER","cat":"Fornecedor","valor":"520.61","status":"PAGO","obs":"","id":"e_1782228795810_lro4kl"},{"data":"2026-06-15","desc":"DENTAL CREMER","cat":"Fornecedor","valor":"1084.41","status":"PAGO","obs":"","id":"e_1782228820231_ypjdi4"},{"data":"2026-06-15","desc":"DENTAL CREMER","cat":"Fornecedor","valor":"153.22","status":"PAGO","obs":"","id":"e_1782228853642_spxb1g"},{"data":"2026-06-14","desc":"FATURA NUBANK (FABI)","cat":"Fatura Cartao","valor":"1930","status":"PAGO","obs":"","id":"e_1782228953424_qm7znj"},{"data":"2026-06-15","desc":"LANCHE","cat":"Lanche Cafe","valor":"61.75","status":"PAGO","obs":"","id":"e_1782228991631_uojwrr"},{"data":"2026-06-15","desc":"DENTAL CREMER","cat":"Fornecedor","valor":"222.79","status":"PAGO","obs":"","id":"e_1782229016199_qtwgm1"},{"data":"2026-06-18","desc":"PRO LABORE FABIANA (MAIO)","cat":"Pro Labore","valor":"7000","status":"PAGO","obs":"","id":"e_1782229063569_nylpms"},{"data":"2026-06-15","desc":"BRASIL NET","cat":"Agua Luz Internet","valor":"210.78","status":"PAGO","obs":"","id":"e_1782229091277_p3j9hn"},{"data":"2026-06-15","desc":"ROBERTO TÉCNICO","cat":"Manutencao","valor":"800","status":"PAGO","obs":"","id":"e_1782229127145_gbw6cm"},{"data":"2026-06-15","desc":"PREFEITURA","cat":"Impostos","valor":"84.67","status":"PAGO","obs":"","id":"e_1782229152664_seu5ah"},{"data":"2026-06-15","desc":"PREFEITURA","cat":"Impostos","valor":"267.49","status":"PAGO","obs":"","id":"e_1782229179461_hv3mo3"},{"data":"2026-06-15","desc":"PREFEITURA","cat":"Impostos","valor":"114.33","status":"PAGO","obs":"","id":"e_1782229203273_e6q3ej"},{"data":"2026-06-16","desc":"PAGA LEVE ALIEXPRESS","cat":"Compras Online","valor":"40.58","status":"PAGO","obs":"","id":"e_1782229669071_x4a4zu"},{"data":"2026-06-17","desc":"PLANTA ESCRITÓRIO (MARCINHA)","cat":"Outros","valor":"144.43","status":"PAGO","obs":"","id":"e_1782229736835_j2xg3r"},{"data":"2026-06-17","desc":"MERCADO LIVRE","cat":"Compras Online","valor":"80","status":"PAGO","obs":"","id":"e_1782229846638_mrxhip"},{"data":"2026-06-19","desc":"RECEITA FEDERAL ARRECADAÇÃO","cat":"Impostos","valor":"590.56","status":"PAGO","obs":"","id":"e_1782229905024_6to3jk"},{"data":"2026-06-19","desc":"FGTS","cat":"FGTS INSS","valor":"311.22","status":"PAGO","obs":"","id":"e_1782229940452_f38jor"},{"data":"2026-06-22","desc":"SIMPLES","cat":"Impostos","valor":"1963.48","status":"PAGO","obs":"","id":"e_1782229972468_szaovb"},{"data":"2026-06-21","desc":"NEODENTE","cat":"Fornecedor","valor":"947.02","status":"PENDENTE","obs":"","id":"e_1782230026315_azlh8m"},{"data":"2026-06-10","desc":"TIM","cat":"Outros","valor":"68.35","status":"PAGO","obs":"","id":"e_1782231636350_yoz1ka"},{"data":"2026-06-01","desc":"LANCHE","cat":"Lanche Cafe","valor":"64.02","status":"PAGO","obs":"","id":"e_1782240983398_r3kx60"},{"data":"2026-06-02","desc":"LANCHE","cat":"Lanche Cafe","valor":"54.23","status":"PAGO","obs":"","id":"e_1782241015558_mvvfs2"},{"data":"2026-06-03","desc":"LANCHE","cat":"Lanche Cafe","valor":"51.05","status":"PAGO","obs":"","id":"e_1782241039442_p4yq04"},{"data":"2026-06-08","desc":"LANCHE","cat":"Lanche Cafe","valor":"22.76","status":"PAGO","obs":"","id":"e_1782241064802_mb9a98"},{"data":"2026-06-09","desc":"LANCHE","cat":"Lanche Cafe","valor":"38.6","status":"PAGO","obs":"","id":"e_1782241090656_6dyjhh"},{"data":"2026-06-10","desc":"LANCHE","cat":"Lanche Cafe","valor":"50.88","status":"PAGO","obs":"","id":"e_1782241107547_f1gcxj"},{"data":"2026-06-11","desc":"LANCHE","cat":"Lanche Cafe","valor":"58.76","status":"PAGO","obs":"","id":"e_1782241122747_43bcb3"},{"data":"2026-06-12","desc":"LANCHE","cat":"Lanche Cafe","valor":"54","status":"PAGO","obs":"","id":"e_1782241138068_clfbpb"},{"data":"2026-06-15","desc":"LANCHE","cat":"Lanche Cafe","valor":"61.75","status":"PAGO","obs":"","id":"e_1782241189037_isk2kq"},{"data":"2026-06-17","desc":"LANCHE","cat":"Lanche Cafe","valor":"74.42","status":"PAGO","obs":"","id":"e_1782241207350_ujecux"},{"data":"2026-06-16","desc":"LANCHE","cat":"Lanche Cafe","valor":"32.35","status":"PAGO","obs":"","id":"e_1782241223883_jkg19h"},{"data":"2026-06-18","desc":"LANCHE","cat":"Lanche Cafe","valor":"27.27","status":"PAGO","obs":"","id":"e_1782241244124_0rk6yp"},{"data":"2026-06-19","desc":"LANCHE","cat":"Lanche Cafe","valor":"23.16","status":"PAGO","obs":"","id":"e_1782241308555_tj5cpc"},{"data":"2026-06-22","desc":"LANCHE","cat":"Lanche Cafe","valor":"35.12","status":"PAGO","obs":"","id":"e_1782241335406_wq95m6"},{"data":"2026-06-22","desc":"PAPEL HIGIÊNICO","cat":"Fornecedor","valor":"12","status":"PAGO","obs":"","id":"e_1782241380457_5yekx9"}]}};
 // receitas[yearMonthKey][day] = {dinheiro,pix,debito,credito}
 // despesas[yearMonthKey] = [{id,data,desc,cat,valor,status,obs}]
 // yearMonthKey example: "2026-jun"
@@ -691,21 +761,23 @@ function logout(){
 }
 
 /* ============================================================
-   CLOUD STORAGE
+   CLOUD STORAGE — Firebase Firestore
 ============================================================ */
 async function loadData(){
   try{
-    const res = await fetch(JSONBIN_URL + '/latest', {
-      headers:{ 'X-Master-Key': JSONBIN_API_KEY }
-    });
-    if(!res.ok) throw new Error('fetch failed');
-    const json = await res.json();
-    if(json.record && json.record.receitas){
-      DATA = json.record;
+    initFirebase();
+    const doc = await db.collection('caixa').doc('dados').get();
+    if(doc.exists){
+      const saved = doc.data();
+      if(saved.receitas) DATA.receitas = saved.receitas;
+      if(saved.despesas) DATA.despesas = saved.despesas;
+    } else {
+      // Firebase vazio — salva os dados migrados do JSONBin
+      await db.collection('caixa').doc('dados').set(DATA);
     }
   }catch(e){
     console.error('Erro ao carregar dados', e);
-    showToast('Não foi possível carregar os dados salvos');
+    showToast('Nao foi possivel carregar os dados salvos');
   }
 }
 
@@ -714,19 +786,13 @@ function saveData(){
   clearTimeout(saveTimeout);
   saveTimeout = setTimeout(async ()=>{
     try{
-      await fetch(JSONBIN_URL, {
-        method:'PUT',
-        headers:{
-          'Content-Type':'application/json',
-          'X-Master-Key': JSONBIN_API_KEY
-        },
-        body: JSON.stringify(DATA)
-      });
+      initFirebase();
+      await db.collection('caixa').doc('dados').set(DATA);
     }catch(e){
       console.error('Erro ao salvar', e);
-      showToast('Erro ao salvar — verifique a conexão');
+      showToast('Erro ao salvar — verifique a conexao');
     }
-  }, 600);
+  }, 800);
 }
 
 /* ============================================================
@@ -854,9 +920,27 @@ function switchTab(tab){
 ============================================================ */
 function renderAll(){
   renderSummary();
+  populateDayFilters();
   renderReceitas();
   renderDespesas();
   document.getElementById('fab').style.display = currentTab==='despesas' ? 'flex':'none';
+}
+
+function populateDayFilters(){
+  const m = getMonthInfo();
+  const opts = ['<option value="">Todos os dias</option>'];
+  for(let d=1; d<=m.days; d++){
+    const label = String(d).padStart(2,'0')+'/'+String(m.num).padStart(2,'0');
+    opts.push(`<option value="${d}">${label}</option>`);
+  }
+  const recSel = document.getElementById('day-filter-rec');
+  const despSel = document.getElementById('day-filter-desp');
+  if(recSel) recSel.innerHTML = opts.join('');
+  if(despSel) despSel.innerHTML = opts.join('');
+}
+
+function applyDayFilter(){
+  renderReceitas();
 }
 
 function getMonthInfo(){ return MONTHS.find(m=>m.key===currentMonth); }
@@ -945,8 +1029,9 @@ function renderSummary(){
 function renderReceitas(){
   const m = getMonthInfo();
   const rec = getReceitasMonth();
+  const filterDay = parseInt(document.getElementById('day-filter-rec')?.value||'') || null;
 
-  // Payment method summary
+  // Payment method summary (sempre do mes todo, ignorando filtro de dia)
   let totDinheiro=0, totPix=0, totDebito=0, totCredito=0;
   Object.values(rec).forEach(d=>{
     totDinheiro += parseFloat(d.dinheiro)||0;
@@ -966,6 +1051,7 @@ function renderReceitas(){
   // Day-by-day list
   let daysHtml = '';
   for(let d=1; d<=m.days; d++){
+    if(filterDay && d !== filterDay) continue;
     const date = new Date(currentYear, m.num-1, d);
     const wd = WEEKDAYS[date.getDay()];
     const isWeekend = date.getDay()===0 || date.getDay()===6;
@@ -1058,7 +1144,7 @@ function updatePMSummary(){
 const CATEGORY_LABELS = {
   'Fornecedor':'Fornecedor',
   'Aluguel':'Aluguel',
-  'Agua Luz Internet':'Água / Luz / Internet',
+  'Agua Luz Internet':'Água / Luz / Internet / Telefone',
   'Folha de Pagamento':'Folha de Pagamento',
   'Pro Labore':'Pró-labore',
   'Impostos':'Impostos e Taxas',
@@ -1082,19 +1168,44 @@ const CATEGORY_LABELS = {
   'Servicos':'Serviços Terceirizados',
   'Outros':'Outros'
 };
+function toggleCatExpand(row){
+  const expand = row.nextElementSibling;
+  if(!expand) return;
+  const isOpen = expand.style.display !== 'none';
+  expand.style.display = isOpen ? 'none' : 'block';
+  const arrow = row.querySelector('.cat-arrow');
+  if(arrow) arrow.textContent = isOpen ? '▾' : '▴';
+}
+
 function catLabel(cat){
   return CATEGORY_LABELS[cat] || cat || 'Outros';
 }
 
 function renderDespesas(){
   const desp = getDespesasMonth();
-  const sorted = [...desp].sort((a,b)=>{
+  const searchTerm = (document.getElementById('search-desp')?.value||'').toLowerCase().trim();
+  const filterDay = document.getElementById('day-filter-desp')?.value||'';
+  const m = getMonthInfo();
+
+  // Apply filters
+  let filtered = desp.filter(e=>{
+    if(searchTerm && !((e.desc||'').toLowerCase().includes(searchTerm) ||
+                       (e.obs||'').toLowerCase().includes(searchTerm) ||
+                       catLabel(e.cat||'').toLowerCase().includes(searchTerm))) return false;
+    if(filterDay){
+      const dayStr = '2026-' + String(m.num).padStart(2,'0') + '-' + String(filterDay).padStart(2,'0');
+      if(e.data !== dayStr.replace('2026', currentYear)) return false;
+    }
+    return true;
+  });
+
+  const sorted = [...filtered].sort((a,b)=>{
     if(!a.data) return 1;
     if(!b.data) return -1;
     return b.data.localeCompare(a.data);
   });
 
-  // Totais por categoria (apenas pagas)
+  // Totais por categoria (apenas pagas, do mes todo — sem filtro)
   const catTotals = {};
   desp.forEach(e=>{
     if(e.status==='PAGO'){
@@ -1105,22 +1216,32 @@ function renderDespesas(){
   const catEntries = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
 
   let catHtml = '';
-  if(catEntries.length > 0){
+  if(catEntries.length > 0 && !searchTerm && !filterDay){
     catHtml = `<div class="section-block-title">Total por categoria (pagas)</div>`;
     catEntries.forEach(([cat,total])=>{
+      const catItems = desp.filter(e=>e.status==='PAGO' && (e.cat||'Outros')===cat);
+      const catItemsHtml = catItems.map(e=>`
+        <div class="cat-item">
+          <span class="cat-item-desc">${escapeHtml(e.desc)}</span>
+          <span class="cat-item-val">${e.valor?fmtBRL(parseFloat(e.valor)):'—'}</span>
+        </div>`).join('');
       catHtml += `
-        <div class="cat-row">
+        <div class="cat-row" onclick="toggleCatExpand(this)">
           <div class="cat-name">${escapeHtml(catLabel(cat))}</div>
-          <div class="cat-value">${fmtBRL(total)}</div>
-        </div>`;
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="cat-value">${fmtBRL(total)}</div>
+            <div class="cat-arrow">▾</div>
+          </div>
+        </div>
+        <div class="cat-expand" style="display:none;">${catItemsHtml}</div>`;
     });
   }
 
   if(sorted.length===0){
-    document.getElementById('expenses-list').innerHTML = `
+    document.getElementById('expenses-list').innerHTML = catHtml + `
       <div class="empty-state">
         <div class="empty-state-icon">📋</div>
-        <div class="empty-state-text">Nenhuma despesa lançada neste mês.<br>Toque no + para adicionar.</div>
+        <div class="empty-state-text">${searchTerm||filterDay?'Nenhum resultado encontrado.':'Nenhuma despesa lançada neste mês.<br>Toque no + para adicionar.'}</div>
       </div>
     `;
     return;
@@ -1134,13 +1255,12 @@ function renderDespesas(){
     }
   });
 
-  let html = catHtml + `<div class="section-block-title">Lançamentos</div>`;
+  let html = catHtml + `<div class="section-block-title">Lançamentos${searchTerm?' · busca: "'+searchTerm+'"':''}</div>`;
   let lastDateGroup = null;
 
   sorted.forEach(e=>{
     const dateFmt = e.data ? formatDateBR(e.data) : '—';
     const groupKey = e.data || 'sem-data';
-
     if(groupKey !== lastDateGroup){
       lastDateGroup = groupKey;
       if(e.data){
@@ -1167,6 +1287,7 @@ function renderDespesas(){
         <div class="exp-meta">
           <span class="exp-tag">${escapeHtml(catLabel(e.cat))}</span>
         </div>
+        ${e.obs ? `<div class="exp-obs">${escapeHtml(e.obs)}</div>` : ''}
         <div class="status-toggle">
           <div class="status-btn ${e.status==='PENDENTE'?'active pendente':''}" onclick="toggleStatus('${e.id}','PENDENTE')">Pendente</div>
           <div class="status-btn ${e.status==='PAGO'?'active pago':''}" onclick="toggleStatus('${e.id}','PAGO')">Pago</div>
