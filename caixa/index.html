@@ -253,16 +253,36 @@ body{
   margin-bottom:8px;
   box-shadow:0 1px 2px rgba(0,0,0,0.04);
 }
-.day-card.weekend{background:#FFF8E8;}
-.day-card.holiday{background:#FCE9EC;border:1px solid #F2C3CC;}
+.day-card.weekend{
+  background:#FFF0B3;
+  border-left:4px solid #E6A800;
+}
+.day-card.holiday{
+  background:#FFD6DB;
+  border-left:4px solid #C0001A;
+}
+.day-card.weekend .day-input,
+.day-card.holiday .day-input{
+  background:#FFFFFF;
+  color:#221318;
+  border-color:#CCC;
+}
+.day-card.weekend .day-date,
+.day-card.weekend .day-week,
+.day-card.holiday .day-date,
+.day-card.holiday .day-week{
+  color:#221318;
+}
 .holiday-tag{
-  font-size:10.5px;font-weight:700;color:#A3192B;
+  font-size:10.5px;font-weight:700;color:#C0001A;
   margin-top:3px;
 }
 .day-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
 .day-date{font-size:14px;font-weight:700;}
 .day-week{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;}
 .day-total{font-size:14px;font-weight:700;color:var(--green);}
+.day-card.weekend .day-total,
+.day-card.holiday .day-total{color:#1E5C1E;}
 .day-inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .day-input-wrap{position:relative;}
 .day-input-label{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:3px;display:block;}
