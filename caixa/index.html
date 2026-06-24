@@ -500,6 +500,20 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
   padding:11px 10px;font-size:13.5px;background:#fff;color:var(--ink);
   appearance:none;
 }
+.pending-btn{
+  flex:1;text-align:center;
+  padding:11px 14px;
+  border-radius:10px;
+  font-size:13.5px;font-weight:700;
+  background:#fff;
+  border:1.5px solid var(--line);
+  color:var(--muted);
+}
+.pending-btn.active{
+  background:#FCEFD8;
+  border-color:#E6A800;
+  color:#9A6B16;
+}
 </style>
 </head>
 <body>
@@ -593,6 +607,9 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
         <select class="filter-select" id="day-filter-desp" onchange="renderDespesas()">
           <option value="">Todos os dias</option>
         </select>
+      </div>
+      <div class="filter-bar" style="margin-top:0;">
+        <div class="pending-btn" id="pending-btn" onclick="togglePendingFilter()">Mostrar só pendentes</div>
       </div>
       <div id="expenses-list"></div>
     </div>
@@ -1182,6 +1199,18 @@ const CATEGORY_LABELS = {
   'Servicos':'Serviços Terceirizados',
   'Outros':'Outros'
 };
+let showOnlyPending = false;
+
+function togglePendingFilter(){
+  showOnlyPending = !showOnlyPending;
+  const btn = document.getElementById('pending-btn');
+  if(btn){
+    btn.classList.toggle('active', showOnlyPending);
+    btn.textContent = showOnlyPending ? 'Mostrar todas' : 'Mostrar só pendentes';
+  }
+  renderDespesas();
+}
+
 function scrollToExpense(id){
   // Fecha o acordeão e vai pra aba de despesas
   switchTab('despesas');
@@ -1216,12 +1245,13 @@ function renderDespesas(){
 
   // Apply filters
   let filtered = desp.filter(e=>{
+    if(showOnlyPending && e.status !== 'PENDENTE') return false;
     if(searchTerm && !((e.desc||'').toLowerCase().includes(searchTerm) ||
                        (e.obs||'').toLowerCase().includes(searchTerm) ||
                        catLabel(e.cat||'').toLowerCase().includes(searchTerm))) return false;
     if(filterDay){
-      const dayStr = '2026-' + String(m.num).padStart(2,'0') + '-' + String(filterDay).padStart(2,'0');
-      if(e.data !== dayStr.replace('2026', currentYear)) return false;
+      const dayStr = currentYear+'-'+String(m.num).padStart(2,'0')+'-'+String(filterDay).padStart(2,'0');
+      if(e.data !== dayStr) return false;
     }
     return true;
   });
