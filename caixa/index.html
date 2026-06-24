@@ -1430,8 +1430,10 @@ function editExpense(id){
   document.getElementById('exp-valor').value = item.valor ? formatCentsDisplay(item.valor) : '';
   document.getElementById('exp-status').value = item.status || 'PENDENTE';
   document.getElementById('exp-obs').value = item.obs || '';
-  document.getElementById('field-recorrente').style.display = 'none';
+  document.getElementById('exp-recorrencia').value = 'nao';
+  document.getElementById('exp-qtd-meses').value = '';
   document.getElementById('field-qtd-meses').style.display = 'none';
+  document.getElementById('field-recorrente').style.display = 'block';
   document.getElementById('expense-modal').classList.add('open');
 }
 function closeExpenseModal(){
@@ -1456,7 +1458,35 @@ function saveExpense(){
   if(editingExpenseId){
     const item = desp.find(e=>e.id===editingExpenseId);
     Object.assign(item, payload);
-    showToast('Despesa salva!');
+
+    const recType = document.getElementById('exp-recorrencia').value;
+    if(recType !== 'nao' && payload.data){
+      const qtd = recType === 'x' ? parseInt(document.getElementById('exp-qtd-meses').value)||0 : 60;
+      const MONTH_KEYS = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+      let [year, month, day] = payload.data.split('-').map(Number);
+      for(let i=1; i<=qtd; i++){
+        month++;
+        if(month > 12){ month = 1; year++; }
+        if(year > 2040) break;
+        const monthKey = MONTH_KEYS[month-1];
+        const yearMonthK = year + '-' + monthKey;
+        if(!DATA.despesas[yearMonthK]) DATA.despesas[yearMonthK] = [];
+        const newDay = Math.min(day, new Date(year, month, 0).getDate());
+        const newDate = year+'-'+String(month).padStart(2,'0')+'-'+String(newDay).padStart(2,'0');
+        DATA.despesas[yearMonthK].push({
+          data: newDate,
+          desc: payload.desc,
+          cat: payload.cat,
+          valor: payload.valor,
+          status: 'PENDENTE',
+          obs: payload.obs,
+          id: 'e_' + (Date.now()+i) + '_' + Math.random().toString(36).slice(2,8)
+        });
+      }
+      showToast(recType==='sempre' ? 'Lançada nos próximos 60 meses!' : `Lançada nos próximos ${qtd} meses!`);
+    } else {
+      showToast('Despesa salva!');
+    }
   } else {
     payload.id = 'e_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
     desp.push(payload);
