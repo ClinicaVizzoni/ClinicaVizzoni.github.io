@@ -1527,8 +1527,46 @@ function saveExpense(){
   renderDespesas();
 }
 function deleteExpense(id){
-  if(!confirm('Excluir esta despesa?')) return;
+  // Find the expense first to get its details
   const desp = getDespesasMonth();
+  const item = desp.find(e=>e.id===id);
+  if(!item) return;
+
+  // Check if there are future copies with same desc+cat
+  const MONTH_KEYS = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  const currentYearMonthK = currentYear + '-' + currentMonth;
+  let hasFuture = false;
+
+  for(const key of Object.keys(DATA.despesas)){
+    if(key <= currentYearMonthK) continue;
+    const found = DATA.despesas[key].some(e=>e.desc===item.desc && e.cat===item.cat && e.status==='PENDENTE');
+    if(found){ hasFuture = true; break; }
+  }
+
+  if(hasFuture){
+    const choice = confirm(`"${item.desc}"\n\nOK = Excluir esta e todas as futuras pendentes\nCancelar = Excluir só esta`);
+    if(choice){
+      // Delete this one
+      const idx = desp.findIndex(e=>e.id===id);
+      if(idx>-1) desp.splice(idx,1);
+      // Delete all future pending with same desc+cat from current month onwards
+      for(const key of Object.keys(DATA.despesas)){
+        if(key < currentYearMonthK) continue;
+        if(key === currentYearMonthK) continue; // already handled
+        DATA.despesas[key] = DATA.despesas[key].filter(e=>
+          !(e.desc===item.desc && e.cat===item.cat && e.status==='PENDENTE')
+        );
+      }
+      saveData();
+      renderSummary();
+      renderDespesas();
+      showToast('Despesa e futuras excluídas!');
+      return;
+    }
+  } else {
+    if(!confirm('Excluir esta despesa?')) return;
+  }
+
   const idx = desp.findIndex(e=>e.id===id);
   if(idx>-1){
     desp.splice(idx,1);
