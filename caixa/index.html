@@ -609,7 +609,7 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
         </select>
       </div>
       <div class="filter-bar" style="margin-top:0;">
-        <div class="pending-btn" id="pending-btn" onclick="togglePendingFilter()">Mostrar só pendentes</div>
+        <div class="pending-btn" id="pending-btn" onclick="togglePendingFilter()">Pendentes</div>
       </div>
       <div id="expenses-list"></div>
     </div>
@@ -1204,10 +1204,7 @@ let showOnlyPending = false;
 function togglePendingFilter(){
   showOnlyPending = !showOnlyPending;
   const btn = document.getElementById('pending-btn');
-  if(btn){
-    btn.classList.toggle('active', showOnlyPending);
-    btn.textContent = showOnlyPending ? 'Mostrar todas' : 'Mostrar só pendentes';
-  }
+  if(btn) btn.classList.toggle('active', showOnlyPending);
   renderDespesas();
 }
 
@@ -1273,7 +1270,7 @@ function renderDespesas(){
   const catEntries = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
 
   let catHtml = '';
-  if(catEntries.length > 0 && !searchTerm && !filterDay){
+  if(catEntries.length > 0 && !searchTerm && !filterDay && !showOnlyPending){
     catHtml = `<div class="section-block-title">Total por categoria (pagas)</div>`;
     catEntries.forEach(([cat,total])=>{
       const catItems = desp.filter(e=>e.status==='PAGO' && (e.cat||'Outros')===cat);
