@@ -720,6 +720,21 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
   </div>
 </div>
 
+<!-- ============ MODAL: CONFIRMAR EXCLUSÃO ============ -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" style="color:var(--red);">Excluir despesa</div>
+    <div id="delete-modal-desc" style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:8px;"></div>
+    <div id="delete-modal-sub" style="font-size:13px;color:var(--muted);margin-bottom:20px;"></div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div class="modal-btn" id="delete-btn-future" style="background:var(--red-bg);color:var(--red);display:none;" onclick="confirmDeleteFuture()">Excluir esta e todas as futuras pendentes</div>
+      <div class="modal-btn" style="background:var(--red-bg);color:var(--red);" onclick="confirmDeleteOne()">Excluir só esta</div>
+      <div class="modal-btn secondary" onclick="closeDeleteModal()">Cancelar</div>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ============================================================
    FIREBASE CONFIG
@@ -1526,6 +1541,8 @@ function saveExpense(){
   renderSummary();
   renderDespesas();
 }
+let deletingExpenseId = null;
+
 function monthKeyToNum(key){
   const MONTH_KEYS = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
   const parts = key.split('-');
@@ -1534,14 +1551,57 @@ function monthKeyToNum(key){
   return year * 12 + mIdx;
 }
 
+function closeDeleteModal(){
+  document.getElementById('delete-modal').classList.remove('open');
+  deletingExpenseId = null;
+}
+
+function confirmDeleteOne(){
+  if(!deletingExpenseId) return;
+  const desp = getDespesasMonth();
+  const idx = desp.findIndex(e=>e.id===deletingExpenseId);
+  if(idx>-1){
+    desp.splice(idx,1);
+    saveData();
+    renderSummary();
+    renderDespesas();
+    showToast('Despesa excluída');
+  }
+  closeDeleteModal();
+}
+
+function confirmDeleteFuture(){
+  if(!deletingExpenseId) return;
+  const desp = getDespesasMonth();
+  const item = desp.find(e=>e.id===deletingExpenseId);
+  if(!item){ closeDeleteModal(); return; }
+  const currentKeyNum = monthKeyToNum(currentYear + '-' + currentMonth);
+  // Delete this one
+  const idx = desp.findIndex(e=>e.id===deletingExpenseId);
+  if(idx>-1) desp.splice(idx,1);
+  // Delete all future pending with same desc+cat
+  for(const key of Object.keys(DATA.despesas)){
+    if(monthKeyToNum(key) <= currentKeyNum) continue;
+    DATA.despesas[key] = DATA.despesas[key].filter(e=>
+      !(e.desc===item.desc && e.cat===item.cat && e.status==='PENDENTE')
+    );
+  }
+  saveData();
+  renderSummary();
+  renderDespesas();
+  showToast('Despesa e futuras excluídas!');
+  closeDeleteModal();
+}
+
 function deleteExpense(id){
   const desp = getDespesasMonth();
   const item = desp.find(e=>e.id===id);
   if(!item) return;
 
+  deletingExpenseId = id;
   const currentKeyNum = monthKeyToNum(currentYear + '-' + currentMonth);
 
-  // Check if there are future pending copies with same desc+cat
+  // Check if there are future pending copies
   let hasFuture = false;
   for(const key of Object.keys(DATA.despesas)){
     if(monthKeyToNum(key) <= currentKeyNum) continue;
@@ -1551,35 +1611,10 @@ function deleteExpense(id){
     if(found){ hasFuture = true; break; }
   }
 
-  if(hasFuture){
-    const choice = confirm(`"${item.desc}"\n\nOK = Excluir esta e todas as futuras pendentes\nCancelar = Excluir só esta`);
-    if(choice){
-      const idx = desp.findIndex(e=>e.id===id);
-      if(idx>-1) desp.splice(idx,1);
-      for(const key of Object.keys(DATA.despesas)){
-        if(monthKeyToNum(key) <= currentKeyNum) continue;
-        DATA.despesas[key] = DATA.despesas[key].filter(e=>
-          !(e.desc===item.desc && e.cat===item.cat && e.status==='PENDENTE')
-        );
-      }
-      saveData();
-      renderSummary();
-      renderDespesas();
-      showToast('Despesa e futuras excluídas!');
-      return;
-    }
-  } else {
-    if(!confirm('Excluir esta despesa?')) return;
-  }
-
-  const idx = desp.findIndex(e=>e.id===id);
-  if(idx>-1){
-    desp.splice(idx,1);
-    saveData();
-    renderSummary();
-    renderDespesas();
-    showToast('Despesa excluída');
-  }
+  document.getElementById('delete-modal-desc').textContent = item.desc;
+  document.getElementById('delete-modal-sub').textContent = item.valor ? `Valor: ${fmtBRL(parseFloat(item.valor))}` : '';
+  document.getElementById('delete-btn-future').style.display = hasFuture ? 'block' : 'none';
+  document.getElementById('delete-modal').classList.add('open');
 }
 
 /* ============================================================
