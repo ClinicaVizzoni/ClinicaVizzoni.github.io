@@ -254,6 +254,18 @@ body{
 .cat-item:last-child{border-bottom:none;}
 .cat-item-desc{color:var(--ink);font-weight:500;flex:1;}
 .cat-item-val{color:var(--red);font-weight:700;white-space:nowrap;margin-left:8px;}
+.cat-item-goto{font-size:16px;color:var(--muted);font-weight:700;}
+.cat-item{cursor:pointer;}
+.cat-item:active{background:#F0E8EA;}
+
+.exp-card.highlight{
+  animation: highlightPulse 2s ease;
+}
+@keyframes highlightPulse{
+  0%  {box-shadow:0 0 0 3px var(--wine);}
+  50% {box-shadow:0 0 0 6px var(--wine-light);}
+  100%{box-shadow:0 1px 2px rgba(0,0,0,0.04);}
+}
 
 .day-group-header{
   display:flex;justify-content:space-between;align-items:center;
@@ -1168,6 +1180,19 @@ const CATEGORY_LABELS = {
   'Servicos':'Serviços Terceirizados',
   'Outros':'Outros'
 };
+function scrollToExpense(id){
+  // Fecha o acordeão e vai pra aba de despesas
+  switchTab('despesas');
+  // Aguarda renderização e rola até o card
+  setTimeout(()=>{
+    const el = document.getElementById('exp-'+id);
+    if(!el) return;
+    el.scrollIntoView({behavior:'smooth', block:'center'});
+    el.classList.add('highlight');
+    setTimeout(()=>el.classList.remove('highlight'), 2000);
+  }, 100);
+}
+
 function toggleCatExpand(row){
   const expand = row.nextElementSibling;
   if(!expand) return;
@@ -1221,9 +1246,12 @@ function renderDespesas(){
     catEntries.forEach(([cat,total])=>{
       const catItems = desp.filter(e=>e.status==='PAGO' && (e.cat||'Outros')===cat);
       const catItemsHtml = catItems.map(e=>`
-        <div class="cat-item">
+        <div class="cat-item" onclick="scrollToExpense('${e.id}')">
           <span class="cat-item-desc">${escapeHtml(e.desc)}</span>
-          <span class="cat-item-val">${e.valor?fmtBRL(parseFloat(e.valor)):'—'}</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="cat-item-val">${e.valor?fmtBRL(parseFloat(e.valor)):'—'}</span>
+            <span class="cat-item-goto">›</span>
+          </div>
         </div>`).join('');
       catHtml += `
         <div class="cat-row" onclick="toggleCatExpand(this)">
@@ -1279,7 +1307,7 @@ function renderDespesas(){
     }
 
     html += `
-      <div class="exp-card ${e.status==='PAGO'?'paid':''}">
+      <div class="exp-card ${e.status==='PAGO'?'paid':''}" id="exp-${e.id}">
         <div class="exp-top">
           <div class="exp-desc">${escapeHtml(e.desc)}</div>
           <div class="exp-value">${e.valor ? fmtBRL(parseFloat(e.valor)) : '—'}</div>
