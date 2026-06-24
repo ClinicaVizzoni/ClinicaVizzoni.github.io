@@ -688,6 +688,20 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
       <input type="text" class="field-input" id="exp-obs" placeholder="Opcional">
     </div>
 
+    <div class="field" id="field-recorrente">
+      <label class="field-label">Repetir nos próximos meses?</label>
+      <select class="field-input" id="exp-recorrencia" onchange="toggleRecorrencia()">
+        <option value="nao">Não repetir</option>
+        <option value="x">Repetir por X meses</option>
+        <option value="sempre">Repetir todo mês sem fim</option>
+      </select>
+    </div>
+
+    <div class="field" id="field-qtd-meses" style="display:none;">
+      <label class="field-label">Quantos meses?</label>
+      <input type="number" class="field-input" id="exp-qtd-meses" min="1" max="60" placeholder="Ex: 12">
+    </div>
+
     <div class="modal-btn-row">
       <div class="modal-btn secondary" onclick="closeExpenseModal()">Cancelar</div>
       <div class="modal-btn primary" onclick="saveExpense()">Salvar</div>
@@ -1384,6 +1398,11 @@ function toggleStatus(id, status){
 /* ============================================================
    EXPENSE MODAL
 ============================================================ */
+function toggleRecorrencia(){
+  const val = document.getElementById('exp-recorrencia').value;
+  document.getElementById('field-qtd-meses').style.display = val==='x' ? 'block' : 'none';
+}
+
 function openExpenseModal(){
   editingExpenseId = null;
   document.getElementById('expense-modal-title').textContent = 'Nova Despesa';
@@ -1393,6 +1412,10 @@ function openExpenseModal(){
   document.getElementById('exp-valor').value = '';
   document.getElementById('exp-status').value = 'PENDENTE';
   document.getElementById('exp-obs').value = '';
+  document.getElementById('exp-recorrencia').value = 'nao';
+  document.getElementById('exp-qtd-meses').value = '';
+  document.getElementById('field-qtd-meses').style.display = 'none';
+  document.getElementById('field-recorrente').style.display = 'block';
   document.getElementById('expense-modal').classList.add('open');
 }
 function editExpense(id){
@@ -1407,6 +1430,8 @@ function editExpense(id){
   document.getElementById('exp-valor').value = item.valor ? formatCentsDisplay(item.valor) : '';
   document.getElementById('exp-status').value = item.status || 'PENDENTE';
   document.getElementById('exp-obs').value = item.obs || '';
+  document.getElementById('field-recorrente').style.display = 'none';
+  document.getElementById('field-qtd-meses').style.display = 'none';
   document.getElementById('expense-modal').classList.add('open');
 }
 function closeExpenseModal(){
@@ -1431,16 +1456,45 @@ function saveExpense(){
   if(editingExpenseId){
     const item = desp.find(e=>e.id===editingExpenseId);
     Object.assign(item, payload);
+    showToast('Despesa salva!');
   } else {
     payload.id = 'e_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
     desp.push(payload);
+
+    const recType = document.getElementById('exp-recorrencia').value;
+    if(recType !== 'nao' && payload.data){
+      const qtd = recType === 'x' ? parseInt(document.getElementById('exp-qtd-meses').value)||0 : 60;
+      const MONTH_KEYS = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+      let [year, month, day] = payload.data.split('-').map(Number);
+      for(let i=1; i<=qtd; i++){
+        month++;
+        if(month > 12){ month = 1; year++; }
+        if(year > 2040) break;
+        const monthKey = MONTH_KEYS[month-1];
+        const yearMonthK = year + '-' + monthKey;
+        if(!DATA.despesas[yearMonthK]) DATA.despesas[yearMonthK] = [];
+        const newDay = Math.min(day, new Date(year, month, 0).getDate());
+        const newDate = year+'-'+String(month).padStart(2,'0')+'-'+String(newDay).padStart(2,'0');
+        DATA.despesas[yearMonthK].push({
+          data: newDate,
+          desc: payload.desc,
+          cat: payload.cat,
+          valor: payload.valor,
+          status: 'PENDENTE',
+          obs: payload.obs,
+          id: 'e_' + (Date.now()+i) + '_' + Math.random().toString(36).slice(2,8)
+        });
+      }
+      showToast(recType==='sempre' ? 'Lançada nos próximos 60 meses!' : `Lançada nos próximos ${qtd} meses!`);
+    } else {
+      showToast('Despesa salva!');
+    }
   }
 
   saveData();
   closeExpenseModal();
   renderSummary();
   renderDespesas();
-  showToast('Despesa salva!');
 }
 function deleteExpense(id){
   if(!confirm('Excluir esta despesa?')) return;
