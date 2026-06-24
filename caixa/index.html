@@ -1526,33 +1526,38 @@ function saveExpense(){
   renderSummary();
   renderDespesas();
 }
+function monthKeyToNum(key){
+  const MONTH_KEYS = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  const parts = key.split('-');
+  const year = parseInt(parts[0]);
+  const mIdx = MONTH_KEYS.indexOf(parts[1]);
+  return year * 12 + mIdx;
+}
+
 function deleteExpense(id){
-  // Find the expense first to get its details
   const desp = getDespesasMonth();
   const item = desp.find(e=>e.id===id);
   if(!item) return;
 
-  // Check if there are future copies with same desc+cat
-  const MONTH_KEYS = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-  const currentYearMonthK = currentYear + '-' + currentMonth;
-  let hasFuture = false;
+  const currentKeyNum = monthKeyToNum(currentYear + '-' + currentMonth);
 
+  // Check if there are future pending copies with same desc+cat
+  let hasFuture = false;
   for(const key of Object.keys(DATA.despesas)){
-    if(key <= currentYearMonthK) continue;
-    const found = DATA.despesas[key].some(e=>e.desc===item.desc && e.cat===item.cat && e.status==='PENDENTE');
+    if(monthKeyToNum(key) <= currentKeyNum) continue;
+    const found = DATA.despesas[key].some(e=>
+      e.desc===item.desc && e.cat===item.cat && e.status==='PENDENTE'
+    );
     if(found){ hasFuture = true; break; }
   }
 
   if(hasFuture){
     const choice = confirm(`"${item.desc}"\n\nOK = Excluir esta e todas as futuras pendentes\nCancelar = Excluir só esta`);
     if(choice){
-      // Delete this one
       const idx = desp.findIndex(e=>e.id===id);
       if(idx>-1) desp.splice(idx,1);
-      // Delete all future pending with same desc+cat from current month onwards
       for(const key of Object.keys(DATA.despesas)){
-        if(key < currentYearMonthK) continue;
-        if(key === currentYearMonthK) continue; // already handled
+        if(monthKeyToNum(key) <= currentKeyNum) continue;
         DATA.despesas[key] = DATA.despesas[key].filter(e=>
           !(e.desc===item.desc && e.cat===item.cat && e.status==='PENDENTE')
         );
