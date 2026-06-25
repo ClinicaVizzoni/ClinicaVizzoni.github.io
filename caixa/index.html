@@ -660,6 +660,10 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
       <span class="nav-icon">📊</span>
       Fluxo de Caixa
     </div>
+    <div class="nav-item" onclick="openFechamento()">
+      <span class="nav-icon">🖨️</span>
+      Fechamento
+    </div>
   </div>
 
 </div>
@@ -1285,6 +1289,146 @@ function scrollToExpense(id){
     el.classList.add('highlight');
     setTimeout(()=>el.classList.remove('highlight'), 2000);
   }, 100);
+}
+
+/* ============================================================
+   FECHAMENTO DO MES — Pagina para impressao
+============================================================ */
+function openFechamento(){
+  const m = getMonthInfo();
+  const rec = getReceitasMonth();
+  const desp = getDespesasMonth();
+  const monthName = m.label + ' ' + currentYear;
+
+  // Receitas
+  let totDinheiro=0, totPix=0, totDebito=0, totCredito=0;
+  for(let d=1; d<=m.days; d++){
+    const day = rec[d] || {};
+    totDinheiro += parseFloat(day.dinheiro)||0;
+    totPix      += parseFloat(day.pix)||0;
+    totDebito   += parseFloat(day.debito)||0;
+    totCredito  += parseFloat(day.credito)||0;
+  }
+  const totalReceitas = totDinheiro + totPix + totDebito + totCredito;
+
+  // Despesas pagas agrupadas por categoria
+  const catMap = {};
+  desp.filter(e=>e.status==='PAGO').forEach(e=>{
+    const cat = catLabel(e.cat||'Outros');
+    if(!catMap[cat]) catMap[cat] = [];
+    catMap[cat].push(e);
+  });
+  const totalDespesas = desp.filter(e=>e.status==='PAGO')
+    .reduce((s,e)=>s+(parseFloat(e.valor)||0),0);
+  const resultado = totalReceitas - totalDespesas;
+
+  const brl = v => 'R$ ' + (v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const fmtDate = iso => iso ? iso.split('-').reverse().join('/') : '—';
+
+  // Build HTML
+  let despHtml = '';
+  Object.entries(catMap).sort((a,b)=>{
+    const ta = a[1].reduce((s,e)=>s+(parseFloat(e.valor)||0),0);
+    const tb = b[1].reduce((s,e)=>s+(parseFloat(e.valor)||0),0);
+    return tb - ta;
+  }).forEach(([cat, items])=>{
+    const catTotal = items.reduce((s,e)=>s+(parseFloat(e.valor)||0),0);
+    const rows = items.sort((a,b)=>(a.data||'').localeCompare(b.data||'')).map(e=>`
+      <tr>
+        <td class="date">${fmtDate(e.data)}</td>
+        <td class="desc">${e.desc}${e.obs?'<span class="obs"> · '+e.obs+'</span>':''}</td>
+        <td class="val">${e.valor?brl(parseFloat(e.valor)):'—'}</td>
+      </tr>`).join('');
+    despHtml += `
+      <div class="cat-block">
+        <div class="cat-head">
+          <span>${cat}</span>
+          <span>${brl(catTotal)}</span>
+        </div>
+        <table>${rows}</table>
+      </div>`;
+  });
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fechamento ${monthName} — Clínica Vizzoni</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:Arial,sans-serif;font-size:12px;color:#222;padding:24px;max-width:800px;margin:0 auto;}
+  h1{font-size:20px;color:#7A1530;margin-bottom:2px;}
+  .subtitle{font-size:13px;color:#888;margin-bottom:20px;}
+  .section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;
+    color:#7A1530;border-bottom:2px solid #7A1530;padding-bottom:4px;margin:20px 0 10px;}
+  .rec-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+  .rec-item{background:#F5F0F1;border-radius:6px;padding:10px 14px;display:flex;justify-content:space-between;}
+  .rec-label{font-weight:600;color:#555;}
+  .rec-value{font-weight:700;color:#375623;}
+  .rec-total{background:#E2EFDA;border-radius:6px;padding:10px 14px;display:flex;justify-content:space-between;font-weight:700;}
+  .rec-total .rec-value{font-size:14px;}
+  .cat-block{margin-bottom:14px;}
+  .cat-head{display:flex;justify-content:space-between;font-weight:700;font-size:12.5px;
+    background:#F5F0F1;padding:7px 10px;border-radius:4px 4px 0 0;border-left:3px solid #7A1530;}
+  table{width:100%;border-collapse:collapse;}
+  tr{border-bottom:1px solid #F0E8E8;}
+  td{padding:5px 10px;vertical-align:top;}
+  td.date{color:#888;white-space:nowrap;width:90px;}
+  td.desc{flex:1;}
+  td.val{text-align:right;white-space:nowrap;font-weight:600;width:110px;}
+  .obs{color:#999;font-style:italic;font-size:11px;}
+  .resultado{margin-top:20px;padding:14px 18px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;}
+  .resultado.positivo{background:#E2EFDA;}
+  .resultado.negativo{background:#FBEAEC;}
+  .resultado .label{font-size:14px;font-weight:700;}
+  .resultado .value{font-size:20px;font-weight:800;}
+  .resultado.positivo .value{color:#375623;}
+  .resultado.negativo .value{color:#C00000;}
+  .footer{margin-top:30px;text-align:center;font-size:10px;color:#AAA;border-top:1px solid #EEE;padding-top:10px;}
+  @media print{
+    body{padding:12px;}
+    button{display:none!important;}
+  }
+  .print-btn{
+    display:block;width:100%;padding:12px;margin-bottom:20px;
+    background:#7A1530;color:#fff;border:none;border-radius:8px;
+    font-size:15px;font-weight:700;cursor:pointer;
+  }
+</style>
+</head>
+<body>
+<button class="print-btn" onclick="window.print()">🖨️ Imprimir / Salvar como PDF</button>
+<h1>Clínica Vizzoni</h1>
+<div class="subtitle">Fechamento de ${monthName}</div>
+
+<div class="section-title">Receitas</div>
+<div class="rec-grid">
+  <div class="rec-item"><span class="rec-label">Dinheiro</span><span class="rec-value">${brl(totDinheiro)}</span></div>
+  <div class="rec-item"><span class="rec-label">Pix</span><span class="rec-value">${brl(totPix)}</span></div>
+  <div class="rec-item"><span class="rec-label">Débito</span><span class="rec-value">${brl(totDebito)}</span></div>
+  <div class="rec-item"><span class="rec-label">Crédito</span><span class="rec-value">${brl(totCredito)}</span></div>
+</div>
+<div class="rec-total"><span>Total de Receitas</span><span class="rec-value">${brl(totalReceitas)}</span></div>
+
+<div class="section-title">Despesas Pagas por Categoria</div>
+${despHtml || '<p style="color:#999;font-style:italic;">Nenhuma despesa paga neste mês.</p>'}
+
+<div class="rec-total" style="margin-top:10px;">
+  <span>Total de Despesas Pagas</span><span class="rec-value" style="color:#C00000;">${brl(totalDespesas)}</span>
+</div>
+
+<div class="resultado ${resultado>=0?'positivo':'negativo'}">
+  <span class="label">Resultado de ${monthName}</span>
+  <span class="value">${brl(resultado)}</span>
+</div>
+
+<div class="footer">Gerado em ${new Date().toLocaleDateString('pt-BR')} · Clínica Vizzoni</div>
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
 }
 
 function toggleExpCard(card){
