@@ -1369,12 +1369,13 @@ function openFechamento(){
   .rec-total{background:#E2EFDA;border-radius:6px;padding:10px 14px;display:flex;justify-content:space-between;font-weight:700;}
   .rec-total .rec-value{font-size:14px;}
   .cat-block{margin-bottom:14px;}
-  .cat-head{display:flex;justify-content:space-between;font-weight:700;font-size:12.5px;
-    background:#F5F0F1;padding:7px 10px;border-radius:4px 4px 0 0;border-left:3px solid #7A1530;}
+  .cat-head{display:flex;justify-content:space-between;font-weight:800;font-size:13px;
+    background:#7A1530;color:#fff;padding:8px 12px;border-radius:4px 4px 0 0;}
+  .cat-head span:last-child{color:#FFD9B0;}
   table{width:100%;border-collapse:collapse;}
   tr{border-bottom:1px solid #F0E8E8;}
   td{padding:5px 10px;vertical-align:top;}
-  td.date{color:#888;white-space:nowrap;width:90px;}
+  td.date{color:#444;white-space:nowrap;width:90px;font-weight:600;}
   td.desc{flex:1;}
   td.val{text-align:right;white-space:nowrap;font-weight:600;width:110px;}
   .obs{color:#999;font-style:italic;font-size:11px;}
@@ -1386,6 +1387,17 @@ function openFechamento(){
   .resultado.positivo .value{color:#375623;}
   .resultado.negativo .value{color:#C00000;}
   .footer{margin-top:30px;text-align:center;font-size:10px;color:#AAA;border-top:1px solid #EEE;padding-top:10px;}
+  .header-block{
+    text-align:center;
+    background:linear-gradient(135deg,#54101F,#7A1530);
+    color:#fff;
+    padding:24px 20px;
+    border-radius:10px;
+    margin-bottom:24px;
+  }
+  .clinic-name{font-size:13px;letter-spacing:2px;text-transform:uppercase;opacity:0.7;margin-bottom:6px;}
+  .month-title{font-size:26px;font-weight:800;margin-bottom:4px;}
+  .print-date{font-size:11px;opacity:0.6;}
   @media print{
     body{padding:12px;}
     button{display:none!important;}
@@ -1399,8 +1411,11 @@ function openFechamento(){
 </head>
 <body>
 <button class="print-btn" onclick="window.print()">🖨️ Imprimir / Salvar como PDF</button>
-<h1>Clínica Vizzoni</h1>
-<div class="subtitle">Fechamento de ${monthName}</div>
+<div class="header-block">
+  <div class="clinic-name">Clínica Vizzoni</div>
+  <div class="month-title">Fechamento — ${monthName}</div>
+  <div class="print-date">Gerado em ${new Date().toLocaleDateString('pt-BR')}</div>
+</div>
 
 <div class="section-title">Receitas</div>
 <div class="rec-grid">
@@ -1423,7 +1438,7 @@ ${despHtml || '<p style="color:#999;font-style:italic;">Nenhuma despesa paga nes
   <span class="value">${brl(resultado)}</span>
 </div>
 
-<div class="footer">Gerado em ${new Date().toLocaleDateString('pt-BR')} · Clínica Vizzoni</div>
+<div class="footer">Clínica Vizzoni · Fechamento de ${monthName}</div>
 </body></html>`;
 
   const win = window.open('', '_blank');
