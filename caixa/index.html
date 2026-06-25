@@ -1364,11 +1364,16 @@ function openFechamento(){
   .section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;
     color:#7A1530;border-bottom:2px solid #7A1530;padding-bottom:4px;margin:20px 0 10px;}
   .rec-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
-  .rec-item{background:#F5F0F1;border-radius:6px;padding:10px 14px;display:flex;justify-content:space-between;}
+  .rec-item{background:#F5F0F1;border-radius:6px;padding:10px 14px;display:flex;justify-content:space-between;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;}
   .rec-label{font-weight:600;color:#555;}
   .rec-value{font-weight:700;color:#375623;}
-  .rec-total{background:#E2EFDA;border-radius:6px;padding:10px 14px;display:flex;justify-content:space-between;font-weight:700;}
-  .rec-total .rec-value{font-size:14px;}
+  .rec-total{background:#E2EFDA;border-radius:6px;padding:10px 14px;display:flex;justify-content:space-between;font-weight:700;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .rec-total .rec-value{font-size:14px;color:#375623;}
+  .desp-total{background:#F5F0F1;border-radius:6px;padding:10px 14px;display:flex;justify-content:space-between;font-weight:700;margin-top:10px;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .desp-total-val{font-size:14px;color:#7A1530;font-weight:800;}
   .cat-block{margin-bottom:14px;}
   .cat-head{font-weight:800;font-size:13px;
     background:#fff;color:#7A1530;padding:8px 12px;
@@ -1387,27 +1392,24 @@ function openFechamento(){
   td.desc{flex:1;}
   td.val{text-align:right;white-space:nowrap;font-weight:600;width:110px;}
   .obs{color:#999;font-style:italic;font-size:11px;}
-  .resultado{margin-top:20px;padding:14px 18px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;}
+  .resultado{margin-top:20px;padding:14px 18px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;}
   .resultado.positivo{background:#E2EFDA;}
-  .resultado.negativo{background:#FBEAEC;}
+  .resultado.negativo{background:#F5F0F1;}
   .resultado .label{font-size:14px;font-weight:700;}
   .resultado .value{font-size:20px;font-weight:800;}
   .resultado.positivo .value{color:#375623;}
-  .resultado.negativo .value{color:#C00000;}
+  .resultado.negativo .value{color:#7A1530;}
   .footer{margin-top:30px;text-align:center;font-size:10px;color:#AAA;border-top:1px solid #EEE;padding-top:10px;}
   .header-block{
     text-align:center;
-    background:#7A1530 !important;
-    color:#fff !important;
-    padding:24px 20px;
-    border-radius:10px;
+    padding:24px 20px 16px;
+    border-bottom:2px solid #7A1530;
     margin-bottom:24px;
-    -webkit-print-color-adjust:exact !important;
-    print-color-adjust:exact !important;
   }
-  .clinic-name{font-size:13px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.85) !important;margin-bottom:6px;}
-  .month-title{font-size:26px;font-weight:800;margin-bottom:4px;color:#fff !important;}
-  .print-date{font-size:11px;color:rgba(255,255,255,0.75) !important;}
+  .clinic-name{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#7A1530;margin-bottom:6px;font-weight:600;}
+  .month-title{font-size:28px;font-weight:800;margin-bottom:4px;color:#7A1530;}
+  .print-date{font-size:11px;color:#999;}
   @media print{
     body{padding:12px;}
     button{display:none!important;}
@@ -1439,8 +1441,8 @@ function openFechamento(){
 <div class="section-title">Despesas Pagas por Categoria</div>
 ${despHtml || '<p style="color:#999;font-style:italic;">Nenhuma despesa paga neste mês.</p>'}
 
-<div class="rec-total" style="margin-top:10px;">
-  <span>Total de Despesas Pagas</span><span class="rec-value" style="color:#C00000;">${brl(totalDespesas)}</span>
+<div class="desp-total">
+  <span>Total de Despesas Pagas</span><span class="desp-total-val">${brl(totalDespesas)}</span>
 </div>
 
 <div class="resultado ${resultado>=0?'positivo':'negativo'}">
