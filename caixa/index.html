@@ -1371,12 +1371,15 @@ function openFechamento(){
   .rec-total .rec-value{font-size:14px;}
   .cat-block{margin-bottom:14px;}
   .cat-head{font-weight:800;font-size:13px;
-    background:#7A1530;color:#fff;padding:8px 12px;border-radius:4px 4px 0 0;}
+    background:#fff;color:#7A1530;padding:8px 12px;
+    border-left:4px solid #7A1530;border-bottom:1px solid #E8D8DB;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;}
   .cat-foot{display:flex;justify-content:flex-end;align-items:center;gap:8px;
-    background:#F5F0F1;padding:7px 12px;border-radius:0 0 4px 4px;
-    font-size:12px;border-top:1px solid #E8D8DB;}
-  .cat-foot .total-label{color:#7A1530;font-weight:700;}
-  .cat-foot .total-val{color:#7A1530;font-size:14px;font-weight:800;}
+    background:#F5F0F1 !important;padding:7px 12px;border-radius:0 0 4px 4px;
+    font-size:12px;border-top:1px solid #E8D8DB;
+    -webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;}
+  .cat-foot .total-label{color:#7A1530 !important;font-weight:700;}
+  .cat-foot .total-val{color:#7A1530 !important;font-size:14px;font-weight:800;}
   table{width:100%;border-collapse:collapse;}
   tr{border-bottom:1px solid #F0E8E8;}
   td{padding:5px 10px;vertical-align:top;}
@@ -1394,15 +1397,17 @@ function openFechamento(){
   .footer{margin-top:30px;text-align:center;font-size:10px;color:#AAA;border-top:1px solid #EEE;padding-top:10px;}
   .header-block{
     text-align:center;
-    background:linear-gradient(135deg,#54101F,#7A1530);
-    color:#fff;
+    background:#7A1530 !important;
+    color:#fff !important;
     padding:24px 20px;
     border-radius:10px;
     margin-bottom:24px;
+    -webkit-print-color-adjust:exact !important;
+    print-color-adjust:exact !important;
   }
-  .clinic-name{font-size:13px;letter-spacing:2px;text-transform:uppercase;opacity:0.7;margin-bottom:6px;}
-  .month-title{font-size:26px;font-weight:800;margin-bottom:4px;}
-  .print-date{font-size:11px;opacity:0.6;}
+  .clinic-name{font-size:13px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.85) !important;margin-bottom:6px;}
+  .month-title{font-size:26px;font-weight:800;margin-bottom:4px;color:#fff !important;}
+  .print-date{font-size:11px;color:rgba(255,255,255,0.75) !important;}
   @media print{
     body{padding:12px;}
     button{display:none!important;}
