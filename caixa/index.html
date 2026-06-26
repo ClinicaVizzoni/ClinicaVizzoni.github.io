@@ -1584,7 +1584,7 @@ function renderDespesas(){
       }
     }
   });
-  let html = catHtml + pendingTotalHtml + '<div class="section-block-title">Lancamentos' + (searchTerm ? ' · busca: "' + searchTerm + '"' : '') + '</div>';
+
   const totalPendenteGeral = desp
     .filter(e=>e.status==='PENDENTE')
     .reduce((s,e)=>s+(parseFloat(e.valor)||0),0);
@@ -1593,6 +1593,8 @@ function renderDespesas(){
   if(showOnlyPending){
     pendingTotalHtml = '<div class="pending-total-card"><span class="pending-total-label">Total pendente do mes</span><span class="pending-total-val">'+fmtBRL(totalPendenteGeral)+'</span></div>';
   }
+
+  let html = catHtml + pendingTotalHtml + '<div class="section-block-title">Lancamentos' + (searchTerm ? ' · busca: "' + searchTerm + '"' : '') + '</div>';
 
   let lastDateGroup = null;
 
