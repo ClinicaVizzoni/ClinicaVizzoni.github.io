@@ -761,19 +761,6 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
   </div>
 </div>
 
-<!-- ============ MODAL: EDITAR FUTUROS ============ -->
-<div class="modal-overlay" id="edit-future-modal">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Alterar lançamentos</div>
-    <div id="edit-future-desc" style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:8px;"></div>
-    <div style="font-size:13px;color:var(--muted);margin-bottom:20px;">Este lançamento tem cópias futuras pendentes. O que deseja alterar?</div>
-    <div style="display:flex;flex-direction:column;gap:10px;">
-      <div class="modal-btn" style="background:var(--wine);color:#fff;" onclick="confirmEditFuture(true)">Alterar este e todos os futuros pendentes</div>
-      <div class="modal-btn" style="background:#F0E5E8;color:var(--wine);" onclick="confirmEditFuture(false)">Alterar só este</div>
-      <div class="modal-btn secondary" onclick="closeEditFutureModal()">Cancelar</div>
-    </div>
-  </div>
 </div>
 
 <!-- ============ MODAL: SELECIONAR ANO ============ -->
@@ -1732,10 +1719,7 @@ function closeExpenseModal(){
 }
 function saveExpense(){
   const desc = document.getElementById('exp-desc').value.trim();
-  if(!desc){
-    showToast('Digite uma descrição');
-    return;
-  }
+  if(!desc){ showToast('Digite uma descrição'); return; }
   const desp = getDespesasMonth();
   const payload = {
     data: document.getElementById('exp-data').value,
@@ -1747,36 +1731,17 @@ function saveExpense(){
   };
   const recType = document.getElementById('exp-recorrencia').value;
   const qtdMeses = parseInt(document.getElementById('exp-qtd-meses').value)||0;
-  // Fecha o modal e espera o navegador renderizar antes de processar
+
   closeExpenseModal();
-  const editId = editingExpenseId;
-  editingExpenseId = null;
-  setTimeout(()=>{ _processSaveExpense(payload, recType, qtdMeses, editId); }, 10);
-}
 
-function _processSaveExpense(payload, recType, qtdMeses, editId){
-  const desp = getDespesasMonth();
-  if(editId){
-    const item = desp.find(e=>e.id===editId);
-    const oldDesc = item.desc;
+  if(editingExpenseId){
+    const item = desp.find(e=>e.id===editingExpenseId);
     Object.assign(item, payload);
-
-    // Update future copies if checkbox is checked
-    if(updateFutures){
-      const currentKeyNum = monthKeyToNum(currentYear + '-' + currentMonth);
-      for(const key of Object.keys(DATA.despesas)){
-        if(monthKeyToNum(key) <= currentKeyNum) continue;
-        DATA.despesas[key].forEach(e=>{
-          if(e.desc===oldDesc && e.status==='PENDENTE'){
-            e.desc = payload.desc;
-            e.cat = payload.cat;
-            e.valor = payload.valor;
-            e.obs = payload.obs;
-          }
-        });
-      }
-    }
-
+    editingExpenseId = null;
+    showToast('Despesa salva!');
+  } else {
+    payload.id = 'e_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+    desp.push(payload);
     if(recType !== 'nao' && payload.data){
       const qtd = recType === 'x' ? qtdMeses : calcQtdSempre(payload.data);
       const MONTH_KEYS = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
@@ -1796,85 +1761,14 @@ function _processSaveExpense(payload, recType, qtdMeses, editId){
           id: 'e_' + (Date.now()+i) + '_' + Math.random().toString(36).slice(2,8)
         });
       }
-      showToast(recType==='sempre' ? 'Lançada até dezembro/2040!' : 'Lançada nos próximos '+qtd+' meses!');
-    } else {
-      showToast('Despesa salva!');
-    }
-  } else {
-    payload.id = 'e_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
-    desp.push(payload);
-
-
-    editingExpenseId = null;
-
-    if(recType !== 'nao' && payload.data){
-      const qtd = recType === 'x' ? qtdMeses : calcQtdSempre(payload.data);
-      const MONTH_KEYS = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-      let [year, month, day] = payload.data.split('-').map(Number);
-      for(let i=1; i<=qtd; i++){
-        month++;
-        if(month > 12){ month = 1; year++; }
-        if(year > 2040) break;
-        const monthKey = MONTH_KEYS[month-1];
-        const yearMonthK = year + '-' + monthKey;
-        if(!DATA.despesas[yearMonthK]) DATA.despesas[yearMonthK] = [];
-        const newDay = Math.min(day, new Date(year, month, 0).getDate());
-        const newDate = year+'-'+String(month).padStart(2,'0')+'-'+String(newDay).padStart(2,'0');
-        DATA.despesas[yearMonthK].push({
-          data: newDate,
-          desc: payload.desc,
-          cat: payload.cat,
-          valor: payload.valor,
-          status: 'PENDENTE',
-          obs: payload.obs,
-          id: 'e_' + (Date.now()+i) + '_' + Math.random().toString(36).slice(2,8)
-        });
-      }
-      showToast(recType==='sempre' ? 'Lançada até dezembro/2040!' : 'Lançada nos próximos '+qtd+' meses!');
+      showToast(recType==='sempre' ? 'Lançada até dezembro/2040!' : 'Lançada nos próximos '+qtdMeses+' meses!');
     } else {
       showToast('Despesa salva!');
     }
   }
-
-  saveData();
-  editingExpenseId = null;
-  renderSummary();
-  renderDespesas();
-}
-
-let pendingEditPayload = null;
-
-function closeEditFutureModal(){
-  document.getElementById('edit-future-modal').classList.remove('open');
-  pendingEditPayload = null;
-}
-
-function confirmEditFuture(updateFutures){
-  if(!pendingEditPayload){ closeEditFutureModal(); return; }
-  closeEditFutureModal();
-  const { payload, oldDesc, oldCat, currentKeyNum } = pendingEditPayload;
-
-  if(updateFutures){
-    for(const key of Object.keys(DATA.despesas)){
-      if(monthKeyToNum(key) <= currentKeyNum) continue;
-      DATA.despesas[key].forEach(e=>{
-        if(e.desc===oldDesc && e.cat===oldCat && e.status==='PENDENTE'){
-          e.desc  = payload.desc;
-          e.cat   = payload.cat;
-          e.valor = payload.valor;
-          e.obs   = payload.obs;
-        }
-      });
-    }
-    showToast('Este e futuros atualizados!');
-  } else {
-    showToast('Despesa salva!');
-  }
-
   saveData();
   renderSummary();
   renderDespesas();
-  closeEditFutureModal();
 }
 
 function calcQtdSempre(fromDate){
