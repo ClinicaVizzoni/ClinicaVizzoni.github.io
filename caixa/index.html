@@ -1870,6 +1870,7 @@ function closeDeleteModal(){
 
 function confirmDeleteOne(){
   if(!deletingExpenseId) return;
+  closeDeleteModal();
   const desp = getDespesasMonth();
   const idx = desp.findIndex(e=>e.id===deletingExpenseId);
   if(idx>-1){
@@ -1879,7 +1880,6 @@ function confirmDeleteOne(){
     renderDespesas();
     showToast('Despesa excluída');
   }
-  closeDeleteModal();
 }
 
 function confirmDeleteFuture(){
@@ -1888,21 +1888,19 @@ function confirmDeleteFuture(){
   const item = desp.find(e=>e.id===deletingExpenseId);
   if(!item){ closeDeleteModal(); return; }
   const currentKeyNum = monthKeyToNum(currentYear + '-' + currentMonth);
-  // Delete this one
   const idx = desp.findIndex(e=>e.id===deletingExpenseId);
   if(idx>-1) desp.splice(idx,1);
-  // Delete all future pending with same desc+cat
   for(const key of Object.keys(DATA.despesas)){
     if(monthKeyToNum(key) <= currentKeyNum) continue;
     DATA.despesas[key] = DATA.despesas[key].filter(e=>
       !(e.desc===item.desc && e.cat===item.cat && e.status==='PENDENTE')
     );
   }
+  closeDeleteModal();
   saveData();
   renderSummary();
   renderDespesas();
   showToast('Despesa e futuras excluídas!');
-  closeDeleteModal();
 }
 
 function deleteExpense(id){
