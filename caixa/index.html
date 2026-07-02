@@ -1765,7 +1765,7 @@ function saveExpense(){
     }
 
     if(hasFuture){
-      // Store payload and show modal — modal will handle save+close
+      // Tem cópias futuras — pergunta se quer atualizar
       pendingEditPayload = { payload, oldDesc, oldCat, currentKeyNum };
       document.getElementById('edit-future-desc').textContent = payload.desc;
       document.getElementById('edit-future-modal').classList.add('open');
@@ -1773,7 +1773,34 @@ function saveExpense(){
       return;
     }
 
-    showToast('Despesa salva!');
+    // Sem cópias futuras — processa repetição se selecionada
+    if(recType !== 'nao' && payload.data){
+      const qtd = recType === 'x' ? parseInt(document.getElementById('exp-qtd-meses').value)||0 : calcQtdSempre(payload.data);
+      const MONTH_KEYS = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+      let [year, month, day] = payload.data.split('-').map(Number);
+      for(let i=1; i<=qtd; i++){
+        month++;
+        if(month > 12){ month = 1; year++; }
+        if(year > 2040) break;
+        const monthKey = MONTH_KEYS[month-1];
+        const yearMonthK = year + '-' + monthKey;
+        if(!DATA.despesas[yearMonthK]) DATA.despesas[yearMonthK] = [];
+        const newDay = Math.min(day, new Date(year, month, 0).getDate());
+        const newDate = year+'-'+String(month).padStart(2,'0')+'-'+String(newDay).padStart(2,'0');
+        DATA.despesas[yearMonthK].push({
+          data: newDate,
+          desc: payload.desc,
+          cat: payload.cat,
+          valor: payload.valor,
+          status: 'PENDENTE',
+          obs: payload.obs,
+          id: 'e_' + (Date.now()+i) + '_' + Math.random().toString(36).slice(2,8)
+        });
+      }
+      showToast(recType==='sempre' ? 'Lançada até dezembro/2040!' : 'Lançada nos próximos '+qtd+' meses!');
+    } else {
+      showToast('Despesa salva!');
+    }
   } else {
     payload.id = 'e_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
     desp.push(payload);
