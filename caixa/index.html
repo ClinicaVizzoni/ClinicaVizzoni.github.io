@@ -889,24 +889,17 @@ async function loadData(){
       if(saved.receitas) DATA.receitas[key] = saved.receitas;
       if(saved.despesas) DATA.despesas[key] = saved.despesas;
     } else {
-      // Tenta migrar do documento antigo 'dados'
+      // Tenta migrar do documento antigo 'dados' — só o mês atual
       const oldDoc = await db.collection('caixa').doc('dados').get();
       if(oldDoc.exists){
         const old = oldDoc.data();
         if(old.receitas) DATA.receitas = old.receitas;
         if(old.despesas) DATA.despesas = old.despesas;
-        // Salva cada mês no novo formato
-        const allKeys = new Set([
-          ...Object.keys(DATA.receitas),
-          ...Object.keys(DATA.despesas)
-        ]);
-        for(const k of allKeys){
-          await db.collection('caixa').doc(k).set({
-            receitas: DATA.receitas[k] || {},
-            despesas: DATA.despesas[k] || []
-          });
-        }
-        showToast('Dados migrados com sucesso!');
+        // Salva APENAS o mês atual no novo formato agora
+        await db.collection('caixa').doc(key).set({
+          receitas: DATA.receitas[key] || {},
+          despesas: DATA.despesas[key] || []
+        });
       }
     }
   }catch(e){
