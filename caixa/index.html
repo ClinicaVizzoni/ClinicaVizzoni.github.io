@@ -800,7 +800,7 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
     <div id="delete-modal-sub" style="font-size:13px;color:var(--muted);margin-bottom:20px;"></div>
     <div style="display:flex;flex-direction:column;gap:10px;">
       <div class="modal-btn" id="delete-btn-future" style="background:var(--red-bg);color:var(--red);display:none;" onclick="confirmDeleteFuture()">Excluir esta e todas as futuras pendentes</div>
-      <div class="modal-btn" style="background:var(--red-bg);color:var(--red);" onclick="confirmDeleteOne()">Excluir só esta</div>
+      <div class="modal-btn" id="delete-btn-one" style="background:var(--red-bg);color:var(--red);" onclick="confirmDeleteOne()">Excluir</div>
       <div class="modal-btn secondary" onclick="closeDeleteModal()">Cancelar</div>
     </div>
   </div>
@@ -1849,8 +1849,10 @@ function saveExpense(){
 
   saveData();
   editingExpenseId = null;
-  renderSummary();
-  renderDespesas();
+  setTimeout(()=>{
+    renderSummary();
+    renderDespesas();
+  }, 50);
 }
 
 let pendingEditPayload = null;
@@ -1916,8 +1918,7 @@ function confirmDeleteOne(){
   if(idx>-1){
     desp.splice(idx,1);
     saveData();
-    renderSummary();
-    renderDespesas();
+    setTimeout(()=>{ renderSummary(); renderDespesas(); }, 50);
     showToast('Despesa excluída');
   }
 }
@@ -1967,6 +1968,7 @@ function deleteExpense(id){
   document.getElementById('delete-modal-desc').textContent = item.desc;
   document.getElementById('delete-modal-sub').textContent = item.valor ? `Valor: ${fmtBRL(parseFloat(item.valor))}` : '';
   document.getElementById('delete-btn-future').style.display = hasFuture ? 'block' : 'none';
+  document.getElementById('delete-btn-one').textContent = hasFuture ? 'Excluir só esta' : 'Excluir';
   document.getElementById('delete-modal').classList.add('open');
 }
 
