@@ -748,12 +748,6 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
       </select>
     </div>
 
-    <div class="field" id="field-update-futures" style="display:none;">
-      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-        <input type="checkbox" id="exp-update-futures" style="width:18px;height:18px;accent-color:var(--wine);">
-        <span style="font-size:13.5px;font-weight:600;color:var(--wine);">Aplicar alterações nas cópias futuras pendentes</span>
-      </label>
-    </div>
 
     <div class="field" id="field-qtd-meses" style="display:none;">
       <label class="field-label">Quantos meses?</label>
@@ -1714,8 +1708,6 @@ function openExpenseModal(){
   document.getElementById('field-qtd-meses').style.display = 'none';
   document.getElementById('field-recorrente').style.display = 'block';
   document.getElementById('expense-modal').classList.add('open');
-  document.getElementById('field-update-futures').style.display = 'none';
-  document.getElementById('exp-update-futures').checked = false;
 }
 function editExpense(id){
   const desp = getDespesasMonth();
@@ -1734,14 +1726,6 @@ function editExpense(id){
   document.getElementById('field-qtd-meses').style.display = 'none';
   document.getElementById('field-recorrente').style.display = 'block';
   document.getElementById('expense-modal').classList.add('open');
-  document.getElementById('exp-update-futures').checked = false;
-  const _ckNum = monthKeyToNum(currentYear + '-' + currentMonth);
-  let _hasFuture = false;
-  for(const _k of Object.keys(DATA.despesas)){
-    if(monthKeyToNum(_k) <= _ckNum) continue;
-    if(DATA.despesas[_k].some(e=>e.desc===(item.desc)&&e.status==='PENDENTE')){ _hasFuture=true; break; }
-  }
-  document.getElementById('field-update-futures').style.display = _hasFuture ? 'block' : 'none';
 }
 function closeExpenseModal(){
   document.getElementById('expense-modal').classList.remove('open');
@@ -1752,8 +1736,6 @@ function saveExpense(){
     showToast('Digite uma descrição');
     return;
   }
-  // Fecha o modal imediatamente
-  closeExpenseModal();
   const desp = getDespesasMonth();
   const payload = {
     data: document.getElementById('exp-data').value,
@@ -1763,14 +1745,22 @@ function saveExpense(){
     status: document.getElementById('exp-status').value,
     obs: document.getElementById('exp-obs').value
   };
+  const recType = document.getElementById('exp-recorrencia').value;
+  const qtdMeses = parseInt(document.getElementById('exp-qtd-meses').value)||0;
+  // Fecha o modal e espera o navegador renderizar antes de processar
+  closeExpenseModal();
+  const editId = editingExpenseId;
+  editingExpenseId = null;
+  requestAnimationFrame(()=>{ _processSaveExpense(payload, recType, qtdMeses, desp, editId); });
+}
 
-  if(editingExpenseId){
-    const item = desp.find(e=>e.id===editingExpenseId);
+function _processSaveExpense(payload, recType, qtdMeses, desp, editId){
+  if(editId){
+    const item = desp.find(e=>e.id===editId);
     const oldDesc = item.desc;
     Object.assign(item, payload);
 
     // Update future copies if checkbox is checked
-    const updateFutures = document.getElementById('exp-update-futures').checked;
     if(updateFutures){
       const currentKeyNum = monthKeyToNum(currentYear + '-' + currentMonth);
       for(const key of Object.keys(DATA.despesas)){
@@ -1786,9 +1776,8 @@ function saveExpense(){
       }
     }
 
-    const recType = document.getElementById('exp-recorrencia').value;
     if(recType !== 'nao' && payload.data){
-      const qtd = recType === 'x' ? parseInt(document.getElementById('exp-qtd-meses').value)||0 : calcQtdSempre(payload.data);
+      const qtd = recType === 'x' ? qtdMeses : calcQtdSempre(payload.data);
       const MONTH_KEYS = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
       let [year, month, day] = payload.data.split('-').map(Number);
       for(let i=1; i<=qtd; i++){
@@ -1814,12 +1803,11 @@ function saveExpense(){
     payload.id = 'e_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
     desp.push(payload);
 
-    const recType = document.getElementById('exp-recorrencia').value;
 
     editingExpenseId = null;
 
     if(recType !== 'nao' && payload.data){
-      const qtd = recType === 'x' ? parseInt(document.getElementById('exp-qtd-meses').value)||0 : calcQtdSempre(payload.data);
+      const qtd = recType === 'x' ? qtdMeses : calcQtdSempre(payload.data);
       const MONTH_KEYS = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
       let [year, month, day] = payload.data.split('-').map(Number);
       for(let i=1; i<=qtd; i++){
