@@ -983,7 +983,7 @@ function getHoliday(year, monthNum, day){
   return HOLIDAYS_CACHE[year][key] || null;
 }
 
-const AVAILABLE_YEARS = [2026,2027,2028,2029,2030,2031,2032,2033,2034,2035,2036,2037,2038,2039,2040];
+const AVAILABLE_YEARS = [2026,2027,2028,2029,2030];
 
 function openYearModal(){
   const wrap = document.getElementById('year-options');
@@ -1035,6 +1035,8 @@ function switchTab(tab){
   document.getElementById('view-receitas').style.display = tab==='receitas' ? 'block':'none';
   document.getElementById('view-despesas').style.display = tab==='despesas' ? 'block':'none';
   document.getElementById('fab').style.display = tab==='despesas' ? 'flex':'none';
+  if(tab==='despesas') renderDespesas();
+  if(tab==='receitas') renderReceitas();
 }
 
 /* ============================================================
@@ -1782,7 +1784,7 @@ function saveExpense(){
       for(let i=1; i<=qtd; i++){
         month++;
         if(month > 12){ month = 1; year++; }
-        if(year > 2040) break;
+        if(year > 2030) break;
         const monthKey = MONTH_KEYS[month-1];
         const yearMonthK = year + '-' + monthKey;
         if(!DATA.despesas[yearMonthK]) DATA.despesas[yearMonthK] = [];
@@ -1814,7 +1816,7 @@ function saveExpense(){
       for(let i=1; i<=qtd; i++){
         month++;
         if(month > 12){ month = 1; year++; }
-        if(year > 2040) break;
+        if(year > 2030) break;
         const monthKey = MONTH_KEYS[month-1];
         const yearMonthK = year + '-' + monthKey;
         if(!DATA.despesas[yearMonthK]) DATA.despesas[yearMonthK] = [];
@@ -1838,8 +1840,18 @@ function saveExpense(){
 
   saveData();
   closeExpenseModal();
+  // Reseta filtro pendentes para mostrar nova despesa
+  if(showOnlyPending){
+    showOnlyPending = false;
+    const btn = document.getElementById('pending-btn');
+    if(btn) btn.classList.remove('active');
+  }
+  // Reseta filtro de dia
+  const dayFilterEl = document.getElementById('day-filter-desp');
+  if(dayFilterEl) dayFilterEl.value = '';
+  // Garante que está na aba de despesas e renderiza
+  switchTab('despesas');
   renderSummary();
-  renderDespesas();
 }
 let deletingExpenseId = null;
 
