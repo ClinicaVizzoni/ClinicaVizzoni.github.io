@@ -834,9 +834,12 @@ function getMonthsForYear(year){
   return MONTH_DEFS.map(m => ({...m, days: daysInMonth(year, m.num)}));
 }
 
-let currentYear = 2026;
+let currentYear = new Date().getFullYear();
 let MONTHS = getMonthsForYear(currentYear);
-let currentMonth = 'jun';
+let currentMonth = (()=>{
+  const MONTH_KEYS2 = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  return MONTH_KEYS2[new Date().getMonth()];
+})();
 let currentTab = 'receitas';
 let editingExpenseId = null;
 
@@ -877,18 +880,38 @@ function logout(){
 async function loadData(){
   try{
     initFirebase();
-    const doc = await db.collection('caixa').doc('dados').get();
+    const key = currentYear + '-' + currentMonth;
+
+    // Tenta carregar do novo formato (documento por mês)
+    const doc = await db.collection('caixa').doc(key).get();
     if(doc.exists){
       const saved = doc.data();
-      if(saved.receitas) DATA.receitas = saved.receitas;
-      if(saved.despesas) DATA.despesas = saved.despesas;
+      if(saved.receitas) DATA.receitas[key] = saved.receitas;
+      if(saved.despesas) DATA.despesas[key] = saved.despesas;
     } else {
-      // Firebase vazio — salva os dados migrados do JSONBin
-      await db.collection('caixa').doc('dados').set(DATA);
+      // Tenta migrar do documento antigo 'dados'
+      const oldDoc = await db.collection('caixa').doc('dados').get();
+      if(oldDoc.exists){
+        const old = oldDoc.data();
+        if(old.receitas) DATA.receitas = old.receitas;
+        if(old.despesas) DATA.despesas = old.despesas;
+        // Salva cada mês no novo formato
+        const allKeys = new Set([
+          ...Object.keys(DATA.receitas),
+          ...Object.keys(DATA.despesas)
+        ]);
+        for(const k of allKeys){
+          await db.collection('caixa').doc(k).set({
+            receitas: DATA.receitas[k] || {},
+            despesas: DATA.despesas[k] || []
+          });
+        }
+        showToast('Dados migrados com sucesso!');
+      }
     }
   }catch(e){
     console.error('Erro ao carregar dados', e);
-    showToast('Nao foi possivel carregar os dados salvos');
+    showToast('Erro ao carregar dados');
   }
 }
 
@@ -898,10 +921,15 @@ function saveData(){
   saveTimeout = setTimeout(async ()=>{
     try{
       initFirebase();
-      await db.collection('caixa').doc('dados').set(DATA);
+      const key = currentYear + '-' + currentMonth;
+      const monthData = {
+        receitas: DATA.receitas[key] || {},
+        despesas: DATA.despesas[key] || []
+      };
+      await db.collection('caixa').doc(key).set(monthData);
     }catch(e){
       console.error('Erro ao salvar', e);
-      showToast('ERRO AO SALVAR! Verifique a conexão: ' + e.message);
+      showToast('ERRO AO SALVAR: ' + e.message);
     }
   }, 0);
 }
@@ -997,7 +1025,7 @@ function selectYear(year){
   buildMonthStrip();
   const m = MONTHS.find(x=>x.key===currentMonth);
   document.getElementById('month-label').textContent = m.label + ' ' + currentYear;
-  renderAll();
+  loadData().then(()=>renderAll());
 }
 
 function buildMonthStrip(){
@@ -1014,7 +1042,7 @@ function selectMonth(key){
   });
   const m = MONTHS.find(x=>x.key===key);
   document.getElementById('month-label').textContent = m.label + ' ' + currentYear;
-  renderAll();
+  loadData().then(()=>renderAll());
 }
 
 function switchTab(tab){
@@ -1767,7 +1795,21 @@ function saveExpense(){
     }
   }
   saveData();
-  // Desativa filtro de pendentes para mostrar o novo lançamento
+  // Salva meses futuros individualmente no Firebase
+  if(!editingExpenseId && recType !== 'nao'){
+    const MONTH_KEYS_FB = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+    Object.keys(DATA.despesas).forEach(async key=>{
+      if(key === currentYear+'-'+currentMonth) return; // já salvo pelo saveData
+      try{
+        initFirebase();
+        await db.collection('caixa').doc(key).set({
+          receitas: DATA.receitas[key] || {},
+          despesas: DATA.despesas[key] || []
+        });
+      }catch(e){ console.error('Erro ao salvar mês futuro', key, e); }
+    });
+  }
+  // Desativa filtro pendentes para mostrar nova despesa
   if(showOnlyPending){
     showOnlyPending = false;
     const btn = document.getElementById('pending-btn');
