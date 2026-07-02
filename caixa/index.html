@@ -881,8 +881,7 @@ async function loadData(){
   try{
     initFirebase();
     const key = currentYear + '-' + currentMonth;
-
-    // Tenta carregar documento do mês atual (novo formato)
+    // Tenta carregar documento do mês (novo formato)
     const doc = await db.collection('caixa').doc(key).get();
     if(doc.exists){
       const saved = doc.data();
@@ -890,60 +889,35 @@ async function loadData(){
       if(saved.despesas) DATA.despesas[key] = saved.despesas;
       return;
     }
-
-    // Não existe ainda — tenta o documento antigo 'dados'
+    // Tenta documento antigo 'dados'
     const oldDoc = await db.collection('caixa').doc('dados').get();
     if(oldDoc.exists){
       const old = oldDoc.data();
       if(old.receitas) DATA.receitas = old.receitas;
       if(old.despesas) DATA.despesas = old.despesas;
-      // Salva o mês atual no novo formato para próximas vezes
-      await db.collection('caixa').doc(key).set({
-        receitas: DATA.receitas[key] || {},
-        despesas: DATA.despesas[key] || []
-      });
     }
   }catch(e){
     console.error('Erro ao carregar dados', e);
-    showToast('Erro ao carregar dados: ' + e.message);
+    showToast('Erro ao carregar: ' + e.message);
   }
 }
 
 let saveTimeout = null;
-
 function saveData(){
-  initFirebase();
-  const key = currentYear + '-' + currentMonth;
-  const monthData = {
-    receitas: DATA.receitas[key] || {},
-    despesas: DATA.despesas[key] || []
-  };
-  // Salva no documento do mês (novo formato)
-  db.collection('caixa').doc(key).set(monthData)
-    .then(()=>{ console.log('Salvo:', key); })
-    .catch(e=>{
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(()=>{
+    initFirebase();
+    const key = currentYear + '-' + currentMonth;
+    db.collection('caixa').doc(key).set({
+      receitas: DATA.receitas[key] || {},
+      despesas: DATA.despesas[key] || []
+    }).catch(e=>{
       console.error('Erro ao salvar', e);
       showToast('ERRO AO SALVAR: ' + e.message);
     });
-  // Também atualiza o documento antigo 'dados' para manter compatibilidade
-  db.collection('caixa').doc('dados').set({
-    receitas: DATA.receitas,
-    despesas: DATA.despesas
-  }).catch(e=>console.error('Erro ao salvar dados:', e));
+  }, 500);
 }
 
-function saveMonth(key){
-  // Salva um mês específico (usado para repetições futuras)
-  initFirebase();
-  const monthData = {
-    receitas: DATA.receitas[key] || {},
-    despesas: DATA.despesas[key] || []
-  };
-  db.collection('caixa').doc(key).set(monthData)
-    .catch(e=>console.error('Erro ao salvar mês', key, e));
-}
-
-/* ============================================================
    INIT
 ============================================================ */
 async function initApp(){
