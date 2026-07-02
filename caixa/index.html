@@ -1764,45 +1764,16 @@ function saveExpense(){
       if(found){ hasFuture = true; break; }
     }
 
-    if(hasFuture && recType === 'nao'){
-      // Ask if user wants to update future ones too
+    if(hasFuture){
+      // Store payload and show modal — modal will handle save+close
       pendingEditPayload = { payload, oldDesc, oldCat, currentKeyNum };
       document.getElementById('edit-future-desc').textContent = payload.desc;
       document.getElementById('edit-future-modal').classList.add('open');
-      saveData();
       closeExpenseModal();
-      renderSummary();
-      renderDespesas();
       return;
     }
 
-    if(recType !== 'nao' && payload.data){
-      const qtd = recType === 'x' ? parseInt(document.getElementById('exp-qtd-meses').value)||0 : calcQtdSempre(payload.data);
-      const MONTH_KEYS = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-      let [year, month, day] = payload.data.split('-').map(Number);
-      for(let i=1; i<=qtd; i++){
-        month++;
-        if(month > 12){ month = 1; year++; }
-        if(year > 2040) break;
-        const monthKey = MONTH_KEYS[month-1];
-        const yearMonthK = year + '-' + monthKey;
-        if(!DATA.despesas[yearMonthK]) DATA.despesas[yearMonthK] = [];
-        const newDay = Math.min(day, new Date(year, month, 0).getDate());
-        const newDate = year+'-'+String(month).padStart(2,'0')+'-'+String(newDay).padStart(2,'0');
-        DATA.despesas[yearMonthK].push({
-          data: newDate,
-          desc: payload.desc,
-          cat: payload.cat,
-          valor: payload.valor,
-          status: 'PENDENTE',
-          obs: payload.obs,
-          id: 'e_' + (Date.now()+i) + '_' + Math.random().toString(36).slice(2,8)
-        });
-      }
-      showToast(recType==='sempre' ? 'Lançada até dezembro/2040!' : 'Lançada nos próximos '+qtd+' meses!');
-    } else {
-      showToast('Despesa salva!');
-    }
+    showToast('Despesa salva!');
   } else {
     payload.id = 'e_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
     desp.push(payload);
@@ -1854,10 +1825,8 @@ function closeEditFutureModal(){
 function confirmEditFuture(updateFutures){
   if(!pendingEditPayload){ closeEditFutureModal(); return; }
   const { payload, oldDesc, oldCat, currentKeyNum } = pendingEditPayload;
-  const MONTH_KEYS = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 
   if(updateFutures){
-    // Update all future pending with old desc+cat
     for(const key of Object.keys(DATA.despesas)){
       if(monthKeyToNum(key) <= currentKeyNum) continue;
       DATA.despesas[key].forEach(e=>{
@@ -1866,7 +1835,6 @@ function confirmEditFuture(updateFutures){
           e.cat   = payload.cat;
           e.valor = payload.valor;
           e.obs   = payload.obs;
-          // Keep original date of each future occurrence
         }
       });
     }
