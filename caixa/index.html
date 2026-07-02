@@ -913,27 +913,20 @@ async function loadData(){
 }
 
 let saveTimeout = null;
-let pendingSaveKeys = new Set();
 
 function saveData(){
-  // Marca mês atual para salvar
-  pendingSaveKeys.add(currentYear + '-' + currentMonth);
-  clearTimeout(saveTimeout);
-  saveTimeout = setTimeout(()=>{
-    initFirebase();
-    pendingSaveKeys.forEach(key=>{
-      const monthData = {
-        receitas: DATA.receitas[key] || {},
-        despesas: DATA.despesas[key] || []
-      };
-      db.collection('caixa').doc(key).set(monthData)
-        .catch(e=>{
-          console.error('Erro ao salvar', key, e);
-          showToast('ERRO AO SALVAR: ' + e.message);
-        });
+  initFirebase();
+  const key = currentYear + '-' + currentMonth;
+  const monthData = {
+    receitas: DATA.receitas[key] || {},
+    despesas: DATA.despesas[key] || []
+  };
+  db.collection('caixa').doc(key).set(monthData)
+    .then(()=>{ console.log('Salvo:', key); })
+    .catch(e=>{
+      console.error('Erro ao salvar', e);
+      showToast('ERRO AO SALVAR: ' + e.message);
     });
-    pendingSaveKeys.clear();
-  }, 300);
 }
 
 function saveMonth(key){
@@ -1038,7 +1031,7 @@ function selectYear(year){
   buildMonthStrip();
   const m = MONTHS.find(x=>x.key===currentMonth);
   document.getElementById('month-label').textContent = m.label + ' ' + currentYear;
-  loadData().then(()=>renderAll());
+  renderAll();
 }
 
 function buildMonthStrip(){
@@ -1055,7 +1048,7 @@ function selectMonth(key){
   });
   const m = MONTHS.find(x=>x.key===key);
   document.getElementById('month-label').textContent = m.label + ' ' + currentYear;
-  loadData().then(()=>renderAll());
+  renderAll();
 }
 
 function switchTab(tab){
@@ -1775,6 +1768,15 @@ function saveExpense(){
 
   closeExpenseModal();
 
+  // Reseta filtros para garantir que a nova despesa apareça
+  const dayFilterEl = document.getElementById('day-filter-desp');
+  if(dayFilterEl) dayFilterEl.value = '';
+  if(showOnlyPending){
+    showOnlyPending = false;
+    const btn = document.getElementById('pending-btn');
+    if(btn) btn.classList.remove('active');
+  }
+
   if(editingExpenseId){
     const item = desp.find(e=>e.id===editingExpenseId);
     Object.assign(item, payload);
@@ -1815,12 +1817,6 @@ function saveExpense(){
         saveMonth(key);
       }
     });
-  }
-  // Desativa filtro pendentes para mostrar nova despesa
-  if(showOnlyPending){
-    showOnlyPending = false;
-    const btn = document.getElementById('pending-btn');
-    if(btn) btn.classList.remove('active');
   }
   renderSummary();
   renderDespesas();
