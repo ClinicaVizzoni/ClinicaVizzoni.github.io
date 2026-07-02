@@ -748,6 +748,13 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
       </select>
     </div>
 
+    <div class="field" id="field-update-futures" style="display:none;">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+        <input type="checkbox" id="exp-update-futures" style="width:18px;height:18px;accent-color:var(--wine);">
+        <span style="font-size:13.5px;font-weight:600;color:var(--wine);">Aplicar alterações nas cópias futuras pendentes</span>
+      </label>
+    </div>
+
     <div class="field" id="field-qtd-meses" style="display:none;">
       <label class="field-label">Quantos meses?</label>
       <input type="number" class="field-input" id="exp-qtd-meses" min="1" max="60" placeholder="Ex: 12">
@@ -1707,6 +1714,8 @@ function openExpenseModal(){
   document.getElementById('field-qtd-meses').style.display = 'none';
   document.getElementById('field-recorrente').style.display = 'block';
   document.getElementById('expense-modal').classList.add('open');
+  document.getElementById('field-update-futures').style.display = 'none';
+  document.getElementById('exp-update-futures').checked = false;
 }
 function editExpense(id){
   const desp = getDespesasMonth();
@@ -1725,6 +1734,14 @@ function editExpense(id){
   document.getElementById('field-qtd-meses').style.display = 'none';
   document.getElementById('field-recorrente').style.display = 'block';
   document.getElementById('expense-modal').classList.add('open');
+  document.getElementById('exp-update-futures').checked = false;
+  const _ckNum = monthKeyToNum(currentYear + '-' + currentMonth);
+  let _hasFuture = false;
+  for(const _k of Object.keys(DATA.despesas)){
+    if(monthKeyToNum(_k) <= _ckNum) continue;
+    if(DATA.despesas[_k].some(e=>e.desc===(item.desc)&&e.status==='PENDENTE')){ _hasFuture=true; break; }
+  }
+  document.getElementById('field-update-futures').style.display = _hasFuture ? 'block' : 'none';
 }
 function closeExpenseModal(){
   document.getElementById('expense-modal').classList.remove('open');
@@ -1735,6 +1752,8 @@ function saveExpense(){
     showToast('Digite uma descrição');
     return;
   }
+  // Fecha o modal imediatamente
+  closeExpenseModal();
   const desp = getDespesasMonth();
   const payload = {
     data: document.getElementById('exp-data').value,
@@ -1748,32 +1767,26 @@ function saveExpense(){
   if(editingExpenseId){
     const item = desp.find(e=>e.id===editingExpenseId);
     const oldDesc = item.desc;
-    const oldCat = item.cat;
     Object.assign(item, payload);
 
+    // Update future copies if checkbox is checked
+    const updateFutures = document.getElementById('exp-update-futures').checked;
+    if(updateFutures){
+      const currentKeyNum = monthKeyToNum(currentYear + '-' + currentMonth);
+      for(const key of Object.keys(DATA.despesas)){
+        if(monthKeyToNum(key) <= currentKeyNum) continue;
+        DATA.despesas[key].forEach(e=>{
+          if(e.desc===oldDesc && e.status==='PENDENTE'){
+            e.desc = payload.desc;
+            e.cat = payload.cat;
+            e.valor = payload.valor;
+            e.obs = payload.obs;
+          }
+        });
+      }
+    }
+
     const recType = document.getElementById('exp-recorrencia').value;
-
-    // Check if there are future pending copies
-    const currentKeyNum = monthKeyToNum(currentYear + '-' + currentMonth);
-    let hasFuture = false;
-    for(const key of Object.keys(DATA.despesas)){
-      if(monthKeyToNum(key) <= currentKeyNum) continue;
-      const found = DATA.despesas[key].some(e=>
-        e.desc===oldDesc && e.cat===oldCat && e.status==='PENDENTE'
-      );
-      if(found){ hasFuture = true; break; }
-    }
-
-    if(hasFuture){
-      // Tem cópias futuras — pergunta se quer atualizar
-      pendingEditPayload = { payload, oldDesc, oldCat, currentKeyNum };
-      document.getElementById('edit-future-desc').textContent = payload.desc;
-      document.getElementById('edit-future-modal').classList.add('open');
-      closeExpenseModal();
-      return;
-    }
-
-    // Sem cópias futuras — processa repetição se selecionada
     if(recType !== 'nao' && payload.data){
       const qtd = recType === 'x' ? parseInt(document.getElementById('exp-qtd-meses').value)||0 : calcQtdSempre(payload.data);
       const MONTH_KEYS = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
@@ -1788,12 +1801,8 @@ function saveExpense(){
         const newDay = Math.min(day, new Date(year, month, 0).getDate());
         const newDate = year+'-'+String(month).padStart(2,'0')+'-'+String(newDay).padStart(2,'0');
         DATA.despesas[yearMonthK].push({
-          data: newDate,
-          desc: payload.desc,
-          cat: payload.cat,
-          valor: payload.valor,
-          status: 'PENDENTE',
-          obs: payload.obs,
+          data: newDate, desc: payload.desc, cat: payload.cat,
+          valor: payload.valor, status: 'PENDENTE', obs: payload.obs,
           id: 'e_' + (Date.now()+i) + '_' + Math.random().toString(36).slice(2,8)
         });
       }
@@ -1807,8 +1816,6 @@ function saveExpense(){
 
     const recType = document.getElementById('exp-recorrencia').value;
 
-    // Fechar modal imediatamente antes do loop pesado
-    closeExpenseModal();
     editingExpenseId = null;
 
     if(recType !== 'nao' && payload.data){
@@ -1841,7 +1848,7 @@ function saveExpense(){
   }
 
   saveData();
-  if(editingExpenseId){ closeExpenseModal(); editingExpenseId = null; }
+  editingExpenseId = null;
   renderSummary();
   renderDespesas();
 }
@@ -1855,6 +1862,7 @@ function closeEditFutureModal(){
 
 function confirmEditFuture(updateFutures){
   if(!pendingEditPayload){ closeEditFutureModal(); return; }
+  closeEditFutureModal();
   const { payload, oldDesc, oldCat, currentKeyNum } = pendingEditPayload;
 
   if(updateFutures){
