@@ -894,10 +894,18 @@ function saveData(){
   saveTimeout = setTimeout(async ()=>{
     try{
       initFirebase();
-      await db.collection('caixa').doc('dados').set({
+      const dataToSave = {
         receitas: DATA.receitas,
         despesas: DATA.despesas
-      });
+      };
+      const jsonSize = JSON.stringify(dataToSave).length;
+      console.log('Salvando... tamanho:', jsonSize, 'bytes');
+      if(jsonSize > 900000){
+        showToast('ERRO: Dados muito grandes (' + Math.round(jsonSize/1024) + 'KB). Limite é 1MB.');
+        return;
+      }
+      await db.collection('caixa').doc('dados').set(dataToSave);
+      console.log('Salvo com sucesso!');
     }catch(e){
       console.error('Erro ao salvar', e);
       showToast('Erro ao salvar: ' + e.message);
