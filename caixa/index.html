@@ -876,46 +876,35 @@ function logout(){
 async function loadData(){
   try{
     initFirebase();
-    // Carrega todos os documentos da coleção caixa
-    const snapshot = await db.collection('caixa').get();
-    snapshot.forEach(doc=>{
-      const key = doc.id;
+    const doc = await db.collection('caixa').doc('dados').get();
+    if(doc.exists){
       const saved = doc.data();
-      if(key === 'dados'){
-        // Documento antigo — só usa se não tiver dados novos
-        if(Object.keys(DATA.receitas).length === 0 && saved.receitas) DATA.receitas = saved.receitas;
-        if(Object.keys(DATA.despesas).length === 0 && saved.despesas) DATA.despesas = saved.despesas;
-      } else {
-        if(saved.receitas) DATA.receitas[key] = saved.receitas;
-        if(saved.despesas) DATA.despesas[key] = saved.despesas;
-      }
-    });
+      if(saved.receitas) DATA.receitas = saved.receitas;
+      if(saved.despesas) DATA.despesas = saved.despesas;
+    }
   }catch(e){
-    console.error('Erro ao carregar dados', e);
-    showToast('Erro ao carregar dados');
+    console.error('Erro ao carregar', e);
+    showToast('Erro ao carregar: ' + e.message);
   }
 }
 
 let saveTimeout = null;
 function saveData(){
-  initFirebase();
-  // Salva TODOS os meses que têm dados na memória
-  const allKeys = new Set([
-    ...Object.keys(DATA.receitas),
-    ...Object.keys(DATA.despesas)
-  ]);
-  allKeys.forEach(key=>{
-    if(!key || key === 'dados') return;
-    db.collection('caixa').doc(key).set({
-      receitas: DATA.receitas[key] || {},
-      despesas: DATA.despesas[key] || []
-    }).catch(e=>console.error('Erro ao salvar', key, e));
-  });
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(async ()=>{
+    try{
+      initFirebase();
+      await db.collection('caixa').doc('dados').set({
+        receitas: DATA.receitas,
+        despesas: DATA.despesas
+      });
+    }catch(e){
+      console.error('Erro ao salvar', e);
+      showToast('Erro ao salvar: ' + e.message);
+    }
+  }, 300);
 }
 
-/* ============================================================
-   INIT
-============================================================ */
 async function initApp(){
   document.getElementById('loading-screen').style.display='flex';
   buildMonthStrip();
