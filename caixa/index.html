@@ -876,22 +876,20 @@ function logout(){
 async function loadData(){
   try{
     initFirebase();
-    const key = currentYear + '-' + currentMonth;
-    // Tenta carregar do documento do mês
-    const doc = await db.collection('caixa').doc(key).get();
-    if(doc.exists){
+    // Carrega todos os documentos da coleção caixa
+    const snapshot = await db.collection('caixa').get();
+    snapshot.forEach(doc=>{
+      const key = doc.id;
       const saved = doc.data();
-      if(saved.receitas) DATA.receitas[key] = saved.receitas;
-      if(saved.despesas) DATA.despesas[key] = saved.despesas;
-    } else {
-      // Tenta documento antigo 'dados'
-      const oldDoc = await db.collection('caixa').doc('dados').get();
-      if(oldDoc.exists){
-        const old = oldDoc.data();
-        if(old.receitas) DATA.receitas = old.receitas;
-        if(old.despesas) DATA.despesas = old.despesas;
+      if(key === 'dados'){
+        // Documento antigo — só usa se não tiver dados novos
+        if(Object.keys(DATA.receitas).length === 0 && saved.receitas) DATA.receitas = saved.receitas;
+        if(Object.keys(DATA.despesas).length === 0 && saved.despesas) DATA.despesas = saved.despesas;
+      } else {
+        if(saved.receitas) DATA.receitas[key] = saved.receitas;
+        if(saved.despesas) DATA.despesas[key] = saved.despesas;
       }
-    }
+    });
   }catch(e){
     console.error('Erro ao carregar dados', e);
     showToast('Erro ao carregar dados');
@@ -1890,22 +1888,23 @@ function confirmDeleteFuture(){
   const desp = getDespesasMonth();
   const item = desp.find(e=>e.id===deletingExpenseId);
   if(!item){ closeDeleteModal(); return; }
+  const idToDelete = deletingExpenseId;
+  const descToDelete = item.desc;
+  const catToDelete = item.cat;
   const currentKeyNum = monthKeyToNum(currentYear + '-' + currentMonth);
-  // Delete this one
-  const idx = desp.findIndex(e=>e.id===deletingExpenseId);
+  closeDeleteModal();
+  const idx = desp.findIndex(e=>e.id===idToDelete);
   if(idx>-1) desp.splice(idx,1);
-  // Delete all future pending with same desc+cat
   for(const key of Object.keys(DATA.despesas)){
     if(monthKeyToNum(key) <= currentKeyNum) continue;
     DATA.despesas[key] = DATA.despesas[key].filter(e=>
-      !(e.desc===item.desc && e.cat===item.cat && e.status==='PENDENTE')
+      !(e.desc===descToDelete && e.cat===catToDelete && e.status==='PENDENTE')
     );
   }
   saveData();
   renderSummary();
   renderDespesas();
   showToast('Despesa e futuras excluídas!');
-  closeDeleteModal();
 }
 
 function deleteExpense(id){
