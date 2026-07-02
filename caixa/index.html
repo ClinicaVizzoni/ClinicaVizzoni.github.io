@@ -761,6 +761,19 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
   </div>
 </div>
 
+<!-- ============ MODAL: EDITAR FUTUROS ============ -->
+<div class="modal-overlay" id="edit-future-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Alterar lançamentos</div>
+    <div id="edit-future-desc" style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:8px;"></div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:20px;">Este lançamento tem cópias futuras pendentes. O que deseja alterar?</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div class="modal-btn" style="background:var(--wine);color:#fff;" onclick="confirmEditFuture(true)">Alterar este e todos os futuros pendentes</div>
+      <div class="modal-btn" style="background:#F0E5E8;color:var(--wine);" onclick="confirmEditFuture(false)">Alterar só este</div>
+      <div class="modal-btn secondary" onclick="closeEditFutureModal()">Cancelar</div>
+    </div>
+  </div>
 </div>
 
 <!-- ============ MODAL: SELECIONAR ANO ============ -->
@@ -834,16 +847,13 @@ function getMonthsForYear(year){
   return MONTH_DEFS.map(m => ({...m, days: daysInMonth(year, m.num)}));
 }
 
-let currentYear = new Date().getFullYear();
+let currentYear = 2026;
 let MONTHS = getMonthsForYear(currentYear);
-let currentMonth = (()=>{
-  const MONTH_KEYS2 = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-  return MONTH_KEYS2[new Date().getMonth()];
-})();
+let currentMonth = 'jun';
 let currentTab = 'receitas';
 let editingExpenseId = null;
 
-let DATA = { receitas: {}, despesas: {} };
+let DATA = {"receitas":{"2026-jun":{"1":{"dinheiro":"955","pix":"3091","debito":"396.44","credito":"1928.53"},"2":{"dinheiro":"1200","pix":"1154","debito":"","credito":"819.06"},"3":{"dinheiro":"1100","pix":"1340","debito":"69.66","credito":"2623.33"},"5":{"dinheiro":"","pix":"","debito":"","credito":"385.69"},"8":{"dinheiro":"2696","pix":"4987","debito":"","credito":""},"9":{"dinheiro":"1127","pix":"3050","debito":"148.66","credito":"240.9"},"10":{"dinheiro":"625","pix":"1325","debito":"","credito":"481.8"},"11":{"dinheiro":"1950","pix":"1668","debito":"","credito":"915.42"},"12":{"dinheiro":"319","pix":"3452","debito":"148.66","credito":"991.1"},"15":{"dinheiro":"521","pix":"698","debito":"","credito":""},"16":{"dinheiro":"1090","pix":"1400","debito":"","credito":"216.81"},"17":{"dinheiro":"450","pix":"550","debito":"","credito":""},"18":{"dinheiro":"","pix":"3024","debito":"495.55","credito":"1241.11"},"19":{"dinheiro":"300","pix":"","debito":"","credito":"2213.27"},"20":{"dinheiro":"0","pix":"1045","debito":"","credito":""},"22":{"dinheiro":"1350","pix":"3090","debito":"0","credito":"241.06"}}},"despesas":{"2026-jun":[{"data":"2026-06-19","desc":"Dental","cat":"Fornecedor","valor":"287.46","status":"PAGO","obs":"","id":"e_1781986769353_en40yw"},{"data":"2026-06-01","desc":"DR. HEITOR GANIER","cat":"Honorarios Dentistas","valor":"3960","status":"PAGO","obs":"","id":"e_1782225847027_us0oys"},{"data":"2026-06-02","desc":"IPTU","cat":"Impostos","valor":"121.2","status":"PAGO","obs":"","id":"e_1782225891612_atpij1"},{"data":"2026-06-01","desc":"MATHEUS MARKETING","cat":"Marketing","valor":"400","status":"PAGO","obs":"","id":"e_1782225930859_0xnmuu"},{"data":"2026-06-01","desc":"TARIFA","cat":"Despesa Bancaria","valor":"30.85","status":"PAGO","obs":"","id":"e_1782225982034_v1jeic"},{"data":"2026-06-02","desc":"CRO-RJ","cat":"CRO Anuidade","valor":"230.75","status":"PAGO","obs":"","id":"e_1782226035479_f9kf1a"},{"data":"2026-06-02","desc":"UNIFORME","cat":"Uniforme","valor":"135","status":"PAGO","obs":"","id":"e_1782226063254_y179se"},{"data":"2026-06-02","desc":"GASE","cat":"Fornecedor","valor":"165","status":"PAGO","obs":"","id":"e_1782226152247_ee5ad8"},{"data":"2026-06-03","desc":"DENTAL CREMER","cat":"Fornecedor","valor":"958.01","status":"PAGO","obs":"","id":"e_1782226195591_m58ls3"},{"data":"2026-06-03","desc":"AT ODONTOLOGIA (ROBERTO)","cat":"Manutencao","valor":"300","status":"PAGO","obs":"","id":"e_1782226254408_1e8gva"},{"data":"2026-06-03","desc":"DR. MARCELO","cat":"Honorarios Dentistas","valor":"1200","status":"PAGO","obs":"","id":"e_1782226449508_pdm4qg"},{"data":"2026-06-04","desc":"DENTAL CREMER","cat":"Fornecedor","valor":"216.38","status":"PAGO","obs":"","id":"e_1782226540108_uipjel"},{"data":"2026-06-03","desc":"FUNCIONÁRIA DUDA","cat":"Folha de Pagamento","valor":"1748.46","status":"PAGO","obs":"","id":"e_1782227516084_9w50kl"},{"data":"2026-06-03","desc":"FUNCIONÁRIA (RAISSA)","cat":"Folha de Pagamento","valor":"1862","status":"PAGO","obs":"","id":"e_1782227568453_tcvrgp"},{"data":"2026-06-05","desc":"FINANCIAMENTO CARRO","cat":"Emprestimo Financiamento","valor":"3799.66","status":"PAGO","obs":"","id":"e_1782227636065_7i1l0i"},{"data":"2026-06-10","desc":"WILLI","cat":"Fornecedor","valor":"600","status":"PAGO","obs":"","id":"e_1782227670621_2wrark"},{"data":"2026-06-05","desc":"GESSO BANHEIRO","cat":"Servicos","valor":"1200","status":"PENDENTE","obs":"","id":"e_1782227831885_ek8olr"},{"data":"2026-06-09","desc":"ALDACIR","cat":"Emprestimo Financiamento","valor":"1500","status":"PAGO","obs":"","id":"e_1782227884577_e6g6bs"},{"data":"2026-06-06","desc":"PAGA LEVE ALIEXPRESS","cat":"Compras Online","valor":"69.43","status":"PAGO","obs":"","id":"e_1782227933455_74hru9"},{"data":"2026-06-07","desc":"SHOPEE","cat":"Compras Online","valor":"276.13","status":"PAGO","obs":"","id":"e_1782228006770_mhugxu"},{"data":"2026-06-10","desc":"DENTAL CREMER","cat":"Fornecedor","valor":"326.06","status":"PAGO","obs":"","id":"e_1782228042096_cyb2s1"},{"data":"2026-06-08","desc":"MAYCON PROTÉTICO","cat":"Laboratorio Protese","valor":"220","status":"PAGO","obs":"","id":"e_1782228082140_4qwspa"},{"data":"2026-06-09","desc":"EMPRÉSTIMO BB PF","cat":"Emprestimo Financiamento","valor":"400","status":"PAGO","obs":"","id":"e_1782228114394_kgt4t0"},{"data":"2026-06-09","desc":"DEVOLUÇÃO MARCELLE","cat":"Devolucao","valor":"200","status":"PAGO","obs":"","id":"e_1782228176252_pprxax"},{"data":"2026-06-10","desc":"EMPRÉSTIMO ZÉ MARIA BB","cat":"Emprestimo Financiamento","valor":"1000","status":"PAGO","obs":"","id":"e_1782228260101_t55nd3"},{"data":"2026-06-10","desc":"ALUGUEL","cat":"Aluguel","valor":"2400","status":"PAGO","obs":"","id":"e_1782228299674_d9eg5c"},{"data":"2026-06-10","desc":"LANCHE","cat":"Lanche Cafe","valor":"50.88","status":"PAGO","obs":"","id":"e_1782228328395_5d89z8"},{"data":"2026-06-10","desc":"TARIFA BB","cat":"Despesa Bancaria","valor":"155","status":"PAGO","obs":"","id":"e_1782228358164_hfsjna"},{"data":"2026-06-10","desc":"PREFEITURA","cat":"Impostos","valor":"43.61","status":"PAGO","obs":"","id":"e_1782228390847_dbkw03"},{"data":"2026-06-11","desc":"CARTÃO SICOOB","cat":"Fatura Cartao","valor":"4735.75","status":"PAGO","obs":"","id":"e_1782228434119_8b95t5"},{"data":"2026-06-11","desc":"BOTOX (MICHELLE)","cat":"Fornecedor","valor":"1229.08","status":"PAGO","obs":"","id":"e_1782228484535_pigys8"},{"data":"2026-06-12","desc":"DEVOLUÇÃO DRA. ROSANE","cat":"Devolucao","valor":"2000","status":"PAGO","obs":"","id":"e_1782228526473_d6difo"},{"data":"2026-06-12","desc":"DENTISTA ORGANIZADO","cat":"Software Assinatura","valor":"304.99","status":"PAGO","obs":"","id":"e_1782228564385_gzs6wc"},{"data":"2026-06-12","desc":"VALE FABI (CLIMAGEM)","cat":"Vale Adiantamento","valor":"250","status":"PAGO","obs":"","id":"e_1782228631172_u9yi9y"},{"data":"2026-06-12","desc":"SHOPEE","cat":"Compras Online","valor":"161.96","status":"PAGO","obs":"","id":"e_1782228700683_8f60z6"},{"data":"2026-06-12","desc":"VALE DRA. SHIRLE (INGRESSO)","cat":"Vale Adiantamento","valor":"198","status":"PAGO","obs":"","id":"e_1782228762761_ji9cl0"},{"data":"2026-06-15","desc":"DENTAL CREMER","cat":"Fornecedor","valor":"520.61","status":"PAGO","obs":"","id":"e_1782228795810_lro4kl"},{"data":"2026-06-15","desc":"DENTAL CREMER","cat":"Fornecedor","valor":"1084.41","status":"PAGO","obs":"","id":"e_1782228820231_ypjdi4"},{"data":"2026-06-15","desc":"DENTAL CREMER","cat":"Fornecedor","valor":"153.22","status":"PAGO","obs":"","id":"e_1782228853642_spxb1g"},{"data":"2026-06-14","desc":"FATURA NUBANK (FABI)","cat":"Fatura Cartao","valor":"1930","status":"PAGO","obs":"","id":"e_1782228953424_qm7znj"},{"data":"2026-06-15","desc":"LANCHE","cat":"Lanche Cafe","valor":"61.75","status":"PAGO","obs":"","id":"e_1782228991631_uojwrr"},{"data":"2026-06-15","desc":"DENTAL CREMER","cat":"Fornecedor","valor":"222.79","status":"PAGO","obs":"","id":"e_1782229016199_qtwgm1"},{"data":"2026-06-18","desc":"PRO LABORE FABIANA (MAIO)","cat":"Pro Labore","valor":"7000","status":"PAGO","obs":"","id":"e_1782229063569_nylpms"},{"data":"2026-06-15","desc":"BRASIL NET","cat":"Agua Luz Internet","valor":"210.78","status":"PAGO","obs":"","id":"e_1782229091277_p3j9hn"},{"data":"2026-06-15","desc":"ROBERTO TÉCNICO","cat":"Manutencao","valor":"800","status":"PAGO","obs":"","id":"e_1782229127145_gbw6cm"},{"data":"2026-06-15","desc":"PREFEITURA","cat":"Impostos","valor":"84.67","status":"PAGO","obs":"","id":"e_1782229152664_seu5ah"},{"data":"2026-06-15","desc":"PREFEITURA","cat":"Impostos","valor":"267.49","status":"PAGO","obs":"","id":"e_1782229179461_hv3mo3"},{"data":"2026-06-15","desc":"PREFEITURA","cat":"Impostos","valor":"114.33","status":"PAGO","obs":"","id":"e_1782229203273_e6q3ej"},{"data":"2026-06-16","desc":"PAGA LEVE ALIEXPRESS","cat":"Compras Online","valor":"40.58","status":"PAGO","obs":"","id":"e_1782229669071_x4a4zu"},{"data":"2026-06-17","desc":"PLANTA ESCRITÓRIO (MARCINHA)","cat":"Outros","valor":"144.43","status":"PAGO","obs":"","id":"e_1782229736835_j2xg3r"},{"data":"2026-06-17","desc":"MERCADO LIVRE","cat":"Compras Online","valor":"80","status":"PAGO","obs":"","id":"e_1782229846638_mrxhip"},{"data":"2026-06-19","desc":"RECEITA FEDERAL ARRECADAÇÃO","cat":"Impostos","valor":"590.56","status":"PAGO","obs":"","id":"e_1782229905024_6to3jk"},{"data":"2026-06-19","desc":"FGTS","cat":"FGTS INSS","valor":"311.22","status":"PAGO","obs":"","id":"e_1782229940452_f38jor"},{"data":"2026-06-22","desc":"SIMPLES","cat":"Impostos","valor":"1963.48","status":"PAGO","obs":"","id":"e_1782229972468_szaovb"},{"data":"2026-06-21","desc":"NEODENTE","cat":"Fornecedor","valor":"947.02","status":"PENDENTE","obs":"","id":"e_1782230026315_azlh8m"},{"data":"2026-06-10","desc":"TIM","cat":"Outros","valor":"68.35","status":"PAGO","obs":"","id":"e_1782231636350_yoz1ka"},{"data":"2026-06-01","desc":"LANCHE","cat":"Lanche Cafe","valor":"64.02","status":"PAGO","obs":"","id":"e_1782240983398_r3kx60"},{"data":"2026-06-02","desc":"LANCHE","cat":"Lanche Cafe","valor":"54.23","status":"PAGO","obs":"","id":"e_1782241015558_mvvfs2"},{"data":"2026-06-03","desc":"LANCHE","cat":"Lanche Cafe","valor":"51.05","status":"PAGO","obs":"","id":"e_1782241039442_p4yq04"},{"data":"2026-06-08","desc":"LANCHE","cat":"Lanche Cafe","valor":"22.76","status":"PAGO","obs":"","id":"e_1782241064802_mb9a98"},{"data":"2026-06-09","desc":"LANCHE","cat":"Lanche Cafe","valor":"38.6","status":"PAGO","obs":"","id":"e_1782241090656_6dyjhh"},{"data":"2026-06-10","desc":"LANCHE","cat":"Lanche Cafe","valor":"50.88","status":"PAGO","obs":"","id":"e_1782241107547_f1gcxj"},{"data":"2026-06-11","desc":"LANCHE","cat":"Lanche Cafe","valor":"58.76","status":"PAGO","obs":"","id":"e_1782241122747_43bcb3"},{"data":"2026-06-12","desc":"LANCHE","cat":"Lanche Cafe","valor":"54","status":"PAGO","obs":"","id":"e_1782241138068_clfbpb"},{"data":"2026-06-15","desc":"LANCHE","cat":"Lanche Cafe","valor":"61.75","status":"PAGO","obs":"","id":"e_1782241189037_isk2kq"},{"data":"2026-06-17","desc":"LANCHE","cat":"Lanche Cafe","valor":"74.42","status":"PAGO","obs":"","id":"e_1782241207350_ujecux"},{"data":"2026-06-16","desc":"LANCHE","cat":"Lanche Cafe","valor":"32.35","status":"PAGO","obs":"","id":"e_1782241223883_jkg19h"},{"data":"2026-06-18","desc":"LANCHE","cat":"Lanche Cafe","valor":"27.27","status":"PAGO","obs":"","id":"e_1782241244124_0rk6yp"},{"data":"2026-06-19","desc":"LANCHE","cat":"Lanche Cafe","valor":"23.16","status":"PAGO","obs":"","id":"e_1782241308555_tj5cpc"},{"data":"2026-06-22","desc":"LANCHE","cat":"Lanche Cafe","valor":"35.12","status":"PAGO","obs":"","id":"e_1782241335406_wq95m6"},{"data":"2026-06-22","desc":"PAPEL HIGIÊNICO","cat":"Fornecedor","valor":"12","status":"PAGO","obs":"","id":"e_1782241380457_5yekx9"}]}};
 // receitas[yearMonthKey][day] = {dinheiro,pix,debito,credito}
 // despesas[yearMonthKey] = [{id,data,desc,cat,valor,status,obs}]
 // yearMonthKey example: "2026-jun"
@@ -881,24 +891,22 @@ async function loadData(){
   try{
     initFirebase();
     const key = currentYear + '-' + currentMonth;
-    // Tenta carregar documento do mês (novo formato)
     const doc = await db.collection('caixa').doc(key).get();
     if(doc.exists){
       const saved = doc.data();
       if(saved.receitas) DATA.receitas[key] = saved.receitas;
       if(saved.despesas) DATA.despesas[key] = saved.despesas;
-      return;
-    }
-    // Tenta documento antigo 'dados'
-    const oldDoc = await db.collection('caixa').doc('dados').get();
-    if(oldDoc.exists){
-      const old = oldDoc.data();
-      if(old.receitas) DATA.receitas = old.receitas;
-      if(old.despesas) DATA.despesas = old.despesas;
+    } else {
+      const oldDoc = await db.collection('caixa').doc('dados').get();
+      if(oldDoc.exists){
+        const old = oldDoc.data();
+        if(old.receitas) DATA.receitas = old.receitas;
+        if(old.despesas) DATA.despesas = old.despesas;
+      }
     }
   }catch(e){
     console.error('Erro ao carregar dados', e);
-    showToast('Erro ao carregar: ' + e.message);
+    showToast('Erro ao carregar dados');
   }
 }
 
@@ -913,7 +921,7 @@ function saveData(){
       despesas: DATA.despesas[key] || []
     }).catch(e=>{
       console.error('Erro ao salvar', e);
-      showToast('ERRO AO SALVAR: ' + e.message);
+      showToast('Erro ao salvar: ' + e.message);
     });
   }, 500);
 }
@@ -1731,7 +1739,10 @@ function closeExpenseModal(){
 }
 function saveExpense(){
   const desc = document.getElementById('exp-desc').value.trim();
-  if(!desc){ showToast('Digite uma descrição'); return; }
+  if(!desc){
+    showToast('Digite uma descrição');
+    return;
+  }
   const desp = getDespesasMonth();
   const payload = {
     data: document.getElementById('exp-data').value,
@@ -1743,30 +1754,32 @@ function saveExpense(){
   };
   const recType = document.getElementById('exp-recorrencia').value;
   const qtdMeses = parseInt(document.getElementById('exp-qtd-meses').value)||0;
+  const editId = editingExpenseId;
 
-  // Reseta filtros para garantir que a nova despesa apareça
-  const dayFilterEl = document.getElementById('day-filter-desp');
-  if(dayFilterEl) dayFilterEl.value = '';
-  if(showOnlyPending){
-    showOnlyPending = false;
-    const btn = document.getElementById('pending-btn');
-    if(btn) btn.classList.remove('active');
-  }
-
-  // Renderiza ANTES de fechar o modal para aparecer imediatamente
-  renderSummary();
-  renderDespesas();
 
   closeExpenseModal();
-
-  if(editingExpenseId){
-    const item = desp.find(e=>e.id===editingExpenseId);
+  editingExpenseId = null;
+  if(editId){
+    const item = desp.find(e=>e.id===editId);
+    const oldDesc = item.desc;
     Object.assign(item, payload);
-    editingExpenseId = null;
-    showToast('Despesa salva!');
-  } else {
-    payload.id = 'e_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
-    desp.push(payload);
+
+    // Update future copies if checkbox is checked
+    if(updateFutures){
+      const currentKeyNum = monthKeyToNum(currentYear + '-' + currentMonth);
+      for(const key of Object.keys(DATA.despesas)){
+        if(monthKeyToNum(key) <= currentKeyNum) continue;
+        DATA.despesas[key].forEach(e=>{
+          if(e.desc===oldDesc && e.status==='PENDENTE'){
+            e.desc = payload.desc;
+            e.cat = payload.cat;
+            e.valor = payload.valor;
+            e.obs = payload.obs;
+          }
+        });
+      }
+    }
+
     if(recType !== 'nao' && payload.data){
       const qtd = recType === 'x' ? qtdMeses : calcQtdSempre(payload.data);
       const MONTH_KEYS = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
@@ -1786,20 +1799,85 @@ function saveExpense(){
           id: 'e_' + (Date.now()+i) + '_' + Math.random().toString(36).slice(2,8)
         });
       }
-      showToast(recType==='sempre' ? 'Lançada até dezembro/2040!' : 'Lançada nos próximos '+qtdMeses+' meses!');
+      showToast(recType==='sempre' ? 'Lançada até dezembro/2040!' : 'Lançada nos próximos '+qtd+' meses!');
+    } else {
+      showToast('Despesa salva!');
+    }
+  } else {
+    payload.id = 'e_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+    desp.push(payload);
+
+
+    editingExpenseId = null;
+
+    if(recType !== 'nao' && payload.data){
+      const qtd = recType === 'x' ? qtdMeses : calcQtdSempre(payload.data);
+      const MONTH_KEYS = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+      let [year, month, day] = payload.data.split('-').map(Number);
+      for(let i=1; i<=qtd; i++){
+        month++;
+        if(month > 12){ month = 1; year++; }
+        if(year > 2040) break;
+        const monthKey = MONTH_KEYS[month-1];
+        const yearMonthK = year + '-' + monthKey;
+        if(!DATA.despesas[yearMonthK]) DATA.despesas[yearMonthK] = [];
+        const newDay = Math.min(day, new Date(year, month, 0).getDate());
+        const newDate = year+'-'+String(month).padStart(2,'0')+'-'+String(newDay).padStart(2,'0');
+        DATA.despesas[yearMonthK].push({
+          data: newDate,
+          desc: payload.desc,
+          cat: payload.cat,
+          valor: payload.valor,
+          status: 'PENDENTE',
+          obs: payload.obs,
+          id: 'e_' + (Date.now()+i) + '_' + Math.random().toString(36).slice(2,8)
+        });
+      }
+      showToast(recType==='sempre' ? 'Lançada até dezembro/2040!' : 'Lançada nos próximos '+qtd+' meses!');
     } else {
       showToast('Despesa salva!');
     }
   }
+
   saveData();
-  // Salva meses futuros com repetições
-  if(!editId && recType !== 'nao'){
-    Object.keys(DATA.despesas).forEach(key=>{
-      if(key !== currentYear+'-'+currentMonth){
-        saveMonth(key);
-      }
-    });
+  editingExpenseId = null;
+  renderSummary();
+  renderDespesas();
+}
+
+let pendingEditPayload = null;
+
+function closeEditFutureModal(){
+  document.getElementById('edit-future-modal').classList.remove('open');
+  pendingEditPayload = null;
+}
+
+function confirmEditFuture(updateFutures){
+  if(!pendingEditPayload){ closeEditFutureModal(); return; }
+  closeEditFutureModal();
+  const { payload, oldDesc, oldCat, currentKeyNum } = pendingEditPayload;
+
+  if(updateFutures){
+    for(const key of Object.keys(DATA.despesas)){
+      if(monthKeyToNum(key) <= currentKeyNum) continue;
+      DATA.despesas[key].forEach(e=>{
+        if(e.desc===oldDesc && e.cat===oldCat && e.status==='PENDENTE'){
+          e.desc  = payload.desc;
+          e.cat   = payload.cat;
+          e.valor = payload.valor;
+          e.obs   = payload.obs;
+        }
+      });
+    }
+    showToast('Este e futuros atualizados!');
+  } else {
+    showToast('Despesa salva!');
   }
+
+  saveData();
+  renderSummary();
+  renderDespesas();
+  closeEditFutureModal();
 }
 
 function calcQtdSempre(fromDate){
