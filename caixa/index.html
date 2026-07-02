@@ -1849,10 +1849,8 @@ function saveExpense(){
 
   saveData();
   editingExpenseId = null;
-  setTimeout(()=>{
-    renderSummary();
-    renderDespesas();
-  }, 50);
+  renderSummary();
+  renderDespesas();
 }
 
 let pendingEditPayload = null;
@@ -1918,7 +1916,8 @@ function confirmDeleteOne(){
   if(idx>-1){
     desp.splice(idx,1);
     saveData();
-    setTimeout(()=>{ renderSummary(); renderDespesas(); }, 50);
+    renderSummary();
+    renderDespesas();
     showToast('Despesa excluída');
   }
 }
