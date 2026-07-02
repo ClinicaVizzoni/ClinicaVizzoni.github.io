@@ -1779,6 +1779,11 @@ function saveExpense(){
     desp.push(payload);
 
     const recType = document.getElementById('exp-recorrencia').value;
+
+    // Fechar modal imediatamente antes do loop pesado
+    closeExpenseModal();
+    editingExpenseId = null;
+
     if(recType !== 'nao' && payload.data){
       const qtd = recType === 'x' ? parseInt(document.getElementById('exp-qtd-meses').value)||0 : calcQtdSempre(payload.data);
       const MONTH_KEYS = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
@@ -1809,11 +1814,10 @@ function saveExpense(){
   }
 
   saveData();
-  closeExpenseModal();
+  if(editingExpenseId){ closeExpenseModal(); editingExpenseId = null; }
   renderSummary();
   renderDespesas();
 }
-let deletingExpenseId = null;
 
 let pendingEditPayload = null;
 
@@ -1870,9 +1874,10 @@ function closeDeleteModal(){
 
 function confirmDeleteOne(){
   if(!deletingExpenseId) return;
+  const idToDelete = deletingExpenseId;
   closeDeleteModal();
   const desp = getDespesasMonth();
-  const idx = desp.findIndex(e=>e.id===deletingExpenseId);
+  const idx = desp.findIndex(e=>e.id===idToDelete);
   if(idx>-1){
     desp.splice(idx,1);
     saveData();
@@ -1887,16 +1892,19 @@ function confirmDeleteFuture(){
   const desp = getDespesasMonth();
   const item = desp.find(e=>e.id===deletingExpenseId);
   if(!item){ closeDeleteModal(); return; }
+  const idToDelete = deletingExpenseId;
+  const descToDelete = item.desc;
+  const catToDelete = item.cat;
   const currentKeyNum = monthKeyToNum(currentYear + '-' + currentMonth);
-  const idx = desp.findIndex(e=>e.id===deletingExpenseId);
+  closeDeleteModal();
+  const idx = desp.findIndex(e=>e.id===idToDelete);
   if(idx>-1) desp.splice(idx,1);
   for(const key of Object.keys(DATA.despesas)){
     if(monthKeyToNum(key) <= currentKeyNum) continue;
     DATA.despesas[key] = DATA.despesas[key].filter(e=>
-      !(e.desc===item.desc && e.cat===item.cat && e.status==='PENDENTE')
+      !(e.desc===descToDelete && e.cat===catToDelete && e.status==='PENDENTE')
     );
   }
-  closeDeleteModal();
   saveData();
   renderSummary();
   renderDespesas();
