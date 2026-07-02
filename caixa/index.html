@@ -882,20 +882,24 @@ async function loadData(){
     initFirebase();
     const key = currentYear + '-' + currentMonth;
 
-    // Tenta carregar do novo formato (documento por mês)
+    // Só carrega se ainda não tem esse mês na memória
+    if(DATA.receitas[key] !== undefined || DATA.despesas[key] !== undefined){
+      return; // já carregado
+    }
+
     const doc = await db.collection('caixa').doc(key).get();
     if(doc.exists){
       const saved = doc.data();
       if(saved.receitas) DATA.receitas[key] = saved.receitas;
       if(saved.despesas) DATA.despesas[key] = saved.despesas;
     } else {
-      // Tenta migrar do documento antigo 'dados' — só o mês atual
+      // Tenta carregar do documento antigo 'dados'
       const oldDoc = await db.collection('caixa').doc('dados').get();
       if(oldDoc.exists){
         const old = oldDoc.data();
-        if(old.receitas) DATA.receitas = old.receitas;
-        if(old.despesas) DATA.despesas = old.despesas;
-        // Salva APENAS o mês atual no novo formato agora
+        if(old.receitas) DATA.receitas = {...old.receitas, ...DATA.receitas};
+        if(old.despesas) DATA.despesas = {...old.despesas, ...DATA.despesas};
+        // Salva o mês atual no novo formato
         await db.collection('caixa').doc(key).set({
           receitas: DATA.receitas[key] || {},
           despesas: DATA.despesas[key] || []
@@ -909,22 +913,38 @@ async function loadData(){
 }
 
 let saveTimeout = null;
+let pendingSaveKeys = new Set();
+
 function saveData(){
+  // Marca mês atual para salvar
+  pendingSaveKeys.add(currentYear + '-' + currentMonth);
   clearTimeout(saveTimeout);
-  saveTimeout = setTimeout(async ()=>{
-    try{
-      initFirebase();
-      const key = currentYear + '-' + currentMonth;
+  saveTimeout = setTimeout(()=>{
+    initFirebase();
+    pendingSaveKeys.forEach(key=>{
       const monthData = {
         receitas: DATA.receitas[key] || {},
         despesas: DATA.despesas[key] || []
       };
-      await db.collection('caixa').doc(key).set(monthData);
-    }catch(e){
-      console.error('Erro ao salvar', e);
-      showToast('ERRO AO SALVAR: ' + e.message);
-    }
-  }, 0);
+      db.collection('caixa').doc(key).set(monthData)
+        .catch(e=>{
+          console.error('Erro ao salvar', key, e);
+          showToast('ERRO AO SALVAR: ' + e.message);
+        });
+    });
+    pendingSaveKeys.clear();
+  }, 300);
+}
+
+function saveMonth(key){
+  // Salva um mês específico (usado para repetições futuras)
+  initFirebase();
+  const monthData = {
+    receitas: DATA.receitas[key] || {},
+    despesas: DATA.despesas[key] || []
+  };
+  db.collection('caixa').doc(key).set(monthData)
+    .catch(e=>console.error('Erro ao salvar mês', key, e));
 }
 
 /* ============================================================
@@ -1788,18 +1808,12 @@ function saveExpense(){
     }
   }
   saveData();
-  // Salva meses futuros individualmente no Firebase
-  if(!editingExpenseId && recType !== 'nao'){
-    const MONTH_KEYS_FB = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-    Object.keys(DATA.despesas).forEach(async key=>{
-      if(key === currentYear+'-'+currentMonth) return; // já salvo pelo saveData
-      try{
-        initFirebase();
-        await db.collection('caixa').doc(key).set({
-          receitas: DATA.receitas[key] || {},
-          despesas: DATA.despesas[key] || []
-        });
-      }catch(e){ console.error('Erro ao salvar mês futuro', key, e); }
+  // Salva meses futuros com repetições
+  if(!editId && recType !== 'nao'){
+    Object.keys(DATA.despesas).forEach(key=>{
+      if(key !== currentYear+'-'+currentMonth){
+        saveMonth(key);
+      }
     });
   }
   // Desativa filtro pendentes para mostrar nova despesa
