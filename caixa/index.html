@@ -1034,7 +1034,12 @@ function selectMonth(key){
   });
   const m = MONTHS.find(x=>x.key===key);
   document.getElementById('month-label').textContent = m.label + ' ' + currentYear;
-  renderAll();
+  const monthKey = currentYear + '-' + key;
+  if(DATA.despesas[monthKey] === undefined && DATA.receitas[monthKey] === undefined){
+    loadData().then(()=>renderAll());
+  } else {
+    renderAll();
+  }
 }
 
 function switchTab(tab){
