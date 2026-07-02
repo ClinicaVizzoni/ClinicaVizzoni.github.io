@@ -882,33 +882,30 @@ async function loadData(){
     initFirebase();
     const key = currentYear + '-' + currentMonth;
 
-    // Só carrega se ainda não tem esse mês na memória
-    if(DATA.receitas[key] !== undefined || DATA.despesas[key] !== undefined){
-      return; // já carregado
-    }
-
+    // Tenta carregar documento do mês atual (novo formato)
     const doc = await db.collection('caixa').doc(key).get();
     if(doc.exists){
       const saved = doc.data();
       if(saved.receitas) DATA.receitas[key] = saved.receitas;
       if(saved.despesas) DATA.despesas[key] = saved.despesas;
-    } else {
-      // Tenta carregar do documento antigo 'dados'
-      const oldDoc = await db.collection('caixa').doc('dados').get();
-      if(oldDoc.exists){
-        const old = oldDoc.data();
-        if(old.receitas) DATA.receitas = {...old.receitas, ...DATA.receitas};
-        if(old.despesas) DATA.despesas = {...old.despesas, ...DATA.despesas};
-        // Salva o mês atual no novo formato
-        await db.collection('caixa').doc(key).set({
-          receitas: DATA.receitas[key] || {},
-          despesas: DATA.despesas[key] || []
-        });
-      }
+      return;
+    }
+
+    // Não existe ainda — tenta o documento antigo 'dados'
+    const oldDoc = await db.collection('caixa').doc('dados').get();
+    if(oldDoc.exists){
+      const old = oldDoc.data();
+      if(old.receitas) DATA.receitas = old.receitas;
+      if(old.despesas) DATA.despesas = old.despesas;
+      // Salva o mês atual no novo formato para próximas vezes
+      await db.collection('caixa').doc(key).set({
+        receitas: DATA.receitas[key] || {},
+        despesas: DATA.despesas[key] || []
+      });
     }
   }catch(e){
     console.error('Erro ao carregar dados', e);
-    showToast('Erro ao carregar dados');
+    showToast('Erro ao carregar dados: ' + e.message);
   }
 }
 
@@ -921,12 +918,18 @@ function saveData(){
     receitas: DATA.receitas[key] || {},
     despesas: DATA.despesas[key] || []
   };
+  // Salva no documento do mês (novo formato)
   db.collection('caixa').doc(key).set(monthData)
     .then(()=>{ console.log('Salvo:', key); })
     .catch(e=>{
       console.error('Erro ao salvar', e);
       showToast('ERRO AO SALVAR: ' + e.message);
     });
+  // Também atualiza o documento antigo 'dados' para manter compatibilidade
+  db.collection('caixa').doc('dados').set({
+    receitas: DATA.receitas,
+    despesas: DATA.despesas
+  }).catch(e=>console.error('Erro ao salvar dados:', e));
 }
 
 function saveMonth(key){
@@ -1766,8 +1769,6 @@ function saveExpense(){
   const recType = document.getElementById('exp-recorrencia').value;
   const qtdMeses = parseInt(document.getElementById('exp-qtd-meses').value)||0;
 
-  closeExpenseModal();
-
   // Reseta filtros para garantir que a nova despesa apareça
   const dayFilterEl = document.getElementById('day-filter-desp');
   if(dayFilterEl) dayFilterEl.value = '';
@@ -1776,6 +1777,12 @@ function saveExpense(){
     const btn = document.getElementById('pending-btn');
     if(btn) btn.classList.remove('active');
   }
+
+  // Renderiza ANTES de fechar o modal para aparecer imediatamente
+  renderSummary();
+  renderDespesas();
+
+  closeExpenseModal();
 
   if(editingExpenseId){
     const item = desp.find(e=>e.id===editingExpenseId);
@@ -1818,8 +1825,6 @@ function saveExpense(){
       }
     });
   }
-  renderSummary();
-  renderDespesas();
 }
 
 function calcQtdSempre(fromDate){
