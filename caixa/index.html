@@ -901,7 +901,7 @@ function saveData(){
       await db.collection('caixa').doc('dados').set(DATA);
     }catch(e){
       console.error('Erro ao salvar', e);
-      showToast('Erro ao salvar — verifique a conexao');
+      showToast('ERRO AO SALVAR! Verifique a conexão: ' + e.message);
     }
   }, 0);
 }
@@ -1767,6 +1767,12 @@ function saveExpense(){
     }
   }
   saveData();
+  // Desativa filtro de pendentes para mostrar o novo lançamento
+  if(showOnlyPending){
+    showOnlyPending = false;
+    const btn = document.getElementById('pending-btn');
+    if(btn) btn.classList.remove('active');
+  }
   renderSummary();
   renderDespesas();
 }
