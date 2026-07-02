@@ -1751,10 +1751,11 @@ function saveExpense(){
   closeExpenseModal();
   const editId = editingExpenseId;
   editingExpenseId = null;
-  requestAnimationFrame(()=>{ _processSaveExpense(payload, recType, qtdMeses, desp, editId); });
+  setTimeout(()=>{ _processSaveExpense(payload, recType, qtdMeses, editId); }, 10);
 }
 
-function _processSaveExpense(payload, recType, qtdMeses, desp, editId){
+function _processSaveExpense(payload, recType, qtdMeses, editId){
+  const desp = getDespesasMonth();
   if(editId){
     const item = desp.find(e=>e.id===editId);
     const oldDesc = item.desc;
