@@ -893,7 +893,7 @@ async function saveData(){
   try{
     initFirebase();
     if(!db){
-      showToast('Firebase não inicializado!');
+      alert('DB É NULL - Firebase não inicializou!');
       return;
     }
     const cleanDespesas = {};
@@ -905,11 +905,11 @@ async function saveData(){
       receitas: DATA.receitas,
       despesas: cleanDespesas
     };
+    alert('Tentando salvar ' + Math.round(JSON.stringify(dataToSave).length/1024) + 'KB...');
     await db.collection('caixa').doc('dados').set(dataToSave);
-    showToast('✅ Salvo!');
+    alert('SALVO COM SUCESSO!');
   }catch(e){
-    console.error('Erro ao salvar', e);
-    showToast('ERRO: ' + e.message);
+    alert('ERRO AO SALVAR: ' + e.message);
   }
 }
 
