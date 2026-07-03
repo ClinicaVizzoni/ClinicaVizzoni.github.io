@@ -908,7 +908,7 @@ function saveData(){
         despesas: cleanDespesas
       };
       await db.collection('caixa').doc('dados').set(dataToSave);
-      console.log('Salvo! ' + Math.round(JSON.stringify(dataToSave).length/1024) + 'KB');
+      showToast('✅ Dados salvos no Firebase!');
     }catch(e){
       console.error('Erro ao salvar', e);
       showToast('Erro ao salvar: ' + e.message);
