@@ -889,31 +889,28 @@ async function loadData(){
 }
 
 let saveTimeout = null;
-function saveData(){
-  clearTimeout(saveTimeout);
-  saveTimeout = setTimeout(async ()=>{
-    try{
-      initFirebase();
-      if(!db){
-        showToast('Firebase não inicializado — verifique conexão');
-        return;
-      }
-      const cleanDespesas = {};
-      Object.keys(DATA.despesas).forEach(key=>{
-        const year = parseInt(key.split('-')[0]);
-        if(year <= 2026) cleanDespesas[key] = DATA.despesas[key];
-      });
-      const dataToSave = {
-        receitas: DATA.receitas,
-        despesas: cleanDespesas
-      };
-      await db.collection('caixa').doc('dados').set(dataToSave);
-      showToast('✅ Dados salvos no Firebase!');
-    }catch(e){
-      console.error('Erro ao salvar', e);
-      showToast('Erro ao salvar: ' + e.message);
+async function saveData(){
+  try{
+    initFirebase();
+    if(!db){
+      showToast('Firebase não inicializado!');
+      return;
     }
-  }, 300);
+    const cleanDespesas = {};
+    Object.keys(DATA.despesas).forEach(key=>{
+      const year = parseInt(key.split('-')[0]);
+      if(year <= 2026) cleanDespesas[key] = DATA.despesas[key];
+    });
+    const dataToSave = {
+      receitas: DATA.receitas,
+      despesas: cleanDespesas
+    };
+    await db.collection('caixa').doc('dados').set(dataToSave);
+    showToast('✅ Salvo!');
+  }catch(e){
+    console.error('Erro ao salvar', e);
+    showToast('ERRO: ' + e.message);
+  }
 }
 
 async function initApp(){
